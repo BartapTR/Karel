@@ -12,6 +12,49 @@ using std::cout;
 using std::string;
 using std::endl;
 
+
+//"Using" is good for abstracting chain types--const vector<vector<string>> multiple times  std::cout-> cout or print if you want
+//Struct is good for multivariable types
+//Class is good for multivarialbe logic types
+
+//Array is fixed size   vector is dynamic-but probably has overhead
+//Void functions don't require "return" by default, like roblox functions
+
+//Const makes the variable fixed after declaration
+
+//use abstraction in index values DISTANCE_INDEX etc
+
+// size_t is unsigned integer/long/long long so its always >= 0  usage in for loops and indexes
+// TargetType result = static_cast<TargetType>(expression);
+/*
+enum class Status { Pending, Approved, Rejected };
+
+Status current = Status::Approved;
+int numeric_status = static_cast<int>(current); // Converts to 1
+------
+int age = 30;
+void* genericPtr = &age; // Implicit conversion to void*
+
+// Convert back to original pointer type
+int* agePtr = static_cast<int*>(genericPtr); 
+
+BUT
+• Cannot strip const or volatile properties: To remove a variable's const modifier, you must explicitly use --------------const_cast.
+• Cannot do unrelated pointer reinterpretations: You cannot cast an int* to a double* or a Bird* to a Car*. For raw memory bit manipulation, reinterpret_cast or C++20's std::bit_cast is needed
+
+CONTEXTPR
+int x;
+std::cin >> x;------RUNTIME
+
+const int a = x;       // OK: 'a' is a read-only view of runtime data 'x'
+constexpr int b = x;   // ERROR: 'x' is not known at compile time!
+constexpr int c = 42;  // OK: 42 is a compile-time literal
+
+A constexpr function can execute at compile time if all its arguments are compile-time constants. 
+However, if you pass it runtime arguments, it behaves like a normal function and runs at runtime without throwing an error.
+*/
+
+
 // A position always has exactly three coordinates. std::array stores its
 // elements directly (unlike vector, it cannot grow or shrink), so it suits
 // fixed-size data such as one XYZ position.
@@ -369,8 +412,8 @@ string checkCommand(string cmd){
     return input;
 }
 //00 JJ==360 Degrees
-//A B C D E F G H I J 
-//0 1 2 3 4 5 6 7 8 9
+//A B C D E F G H I 
+//0 1 2 3 4 5 6 7 8
 int main()
 {
     //vector<int> balls = {9};balls.push_back(1);//for (int num : balls){
