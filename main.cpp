@@ -12,53 +12,12 @@ using std::cout;
 using std::string;
 using std::endl;
 
-
-//"Using" is good for abstracting chain types--const vector<vector<string>> multiple times  std::cout-> cout or print if you want
-//Struct is good for multivariable types
-//Class is good for multivarialbe logic types
-
-//Array is fixed size   vector is dynamic-but probably has overhead
-//Void functions don't require "return" by default, like roblox functions
-
-//Const makes the variable fixed after declaration
-
-//use abstraction in index values DISTANCE_INDEX etc
-
-// size_t is unsigned integer/long/long long so its always >= 0  usage in for loops and indexes
-// TargetType result = static_cast<TargetType>(expression);
-/*
-enum class Status { Pending, Approved, Rejected };
-
-Status current = Status::Approved;
-int numeric_status = static_cast<int>(current); // Converts to 1
-------
-int age = 30;
-void* genericPtr = &age; // Implicit conversion to void*
-
-// Convert back to original pointer type
-int* agePtr = static_cast<int*>(genericPtr); 
-
-BUT
-• Cannot strip const or volatile properties: To remove a variable's const modifier, you must explicitly use --------------const_cast.
-• Cannot do unrelated pointer reinterpretations: You cannot cast an int* to a double* or a Bird* to a Car*. For raw memory bit manipulation, reinterpret_cast or C++20's std::bit_cast is needed
-
-CONTEXTPR
-int x;
-std::cin >> x;------RUNTIME
-
-const int a = x;       // OK: 'a' is a read-only view of runtime data 'x'
-constexpr int b = x;   // ERROR: 'x' is not known at compile time!
-constexpr int c = 42;  // OK: 42 is a compile-time literal
-
-A constexpr function can execute at compile time if all its arguments are compile-time constants. 
-However, if you pass it runtime arguments, it behaves like a normal function and runs at runtime without throwing an error.
-*/
-
-
 // A position always has exactly three coordinates. std::array stores its
 // elements directly (unlike vector, it cannot grow or shrink), so it suits
 // fixed-size data such as one XYZ position.
 using Position = array<float, 3>;
+vector<vector<string>> functions;
+vector<string> functionen;
 
 // getClosestBallInfo returns one compact snapshot with this fixed layout:
 // [distance, delta X, delta Y, delta Z, index in balls].
@@ -74,13 +33,12 @@ constexpr size_t DELTA_Y_INDEX = 2;
 constexpr size_t DELTA_Z_INDEX = 3;
 constexpr size_t BALL_INDEX = 4;
 
+string lastCommand;
+
 Position position = {0, 0, 0};
 vector<Position> balls = {};
 //the shape of area is a sphere
 
-//After that, the functions checking position need changing
-//Then you fix movement in the 3rd dimension
-//Lastly, autoGetBall needs to support 3 dimensions
 //After that you can add numbers and command codes
 //Maybe gravity, time and saving
 //Turn it into an actual game?
@@ -91,6 +49,46 @@ int xydirection = 0;
 int xzdirection = 0;
 float normalMovement = 1.0;
 const double PI = 3.1416;
+
+float RMS(vector<float> numbas){
+    float rms;
+    for (float i:numbas){
+        rms += i*i;
+    }
+    rms = std::sqrt(rms);
+    return rms;
+}
+
+int powar(int numba, int powa){
+    int out = 1;
+    while(true){
+        cout <<numba<<"   "<<powa<<endl;
+        if (powa%2 == 0 && powa){
+            numba *= numba;
+            powa /= 2;
+        }else if (powa >1){
+            powa-=1;
+            out *= numba;
+        }else{
+            break;
+        }
+    }
+    out *= numba;
+    return out;
+}
+
+int toBinary(string inphut){
+    size_t lent = inphut.length();
+    int numbir = 0;
+    for(size_t i=0;i<lent;i++){
+        if (inphut[i]=='0'){
+            continue;    
+        }
+        cout << i<< endl;
+        numbir += (inphut[i]-'0')*powar(2, lent-i-1);
+    }
+    return numbir;
+}
 
 float placeBall(){
     // Both position and each entry in balls use the same three-coordinate
@@ -134,17 +132,16 @@ float autoGetBall(){
     cout << "How many times to move to get to ball: ";
     std::getline(std::cin,line);
     const int steps = stoi(line);
-    // steps is the divisor used to calculate speed; zero or a negative value
-    // cannot describe a valid number of movements.
     if (steps <= 0){
-        cout << "The number of steps must be greater than zero." << endl;
+        cout << "Step count must be > 0" << endl;
         return -1;
     }
     
     const float deltaY = closestBall[DELTA_Y_INDEX];
     const float deltaX = closestBall[DELTA_X_INDEX];
     const float deltaZ = closestBall[DELTA_Z_INDEX];
-    const float hypotenuse = sqrt(deltaY*deltaY+deltaZ*deltaZ+deltaX*deltaX);
+    const vector<float> vec = {deltaX,deltaY,deltaZ};
+    const float hypotenuse =  RMS(vec);
     // If all offsets are zero, the player is already at the target. Avoid
     // dividing by this zero length while calculating the turn angle.
     if (hypotenuse == 0){
@@ -196,7 +193,9 @@ ClosestBallInfo getClosestBallInfo(){
         const float deltaX = balls[ballIndex][0] - position[0];
         const float deltaY = balls[ballIndex][1] - position[1];
         const float deltaZ = balls[ballIndex][2] - position[2];
-        const float distance = sqrt(deltaX*deltaX + deltaY*deltaY + deltaZ*deltaZ);
+        const vector<float> veco = {deltaX,deltaY,deltaZ};
+        const float distance = RMS(veco);
+        //sqrt(deltaX*deltaX + deltaY*deltaY + deltaZ*deltaZ);
 
         if (distance < shortestDistance){
             shortestDistance = distance;
@@ -216,16 +215,14 @@ ClosestBallInfo getClosestBallInfo(){
     // fixed-size copy of the result (small arrays like this are inexpensive).
     return closestBall;
 }
-//Es gibt eine probleme mit der Bewegung. Es macht kein unterschied, ob der Winkel neunzig oder zweihundertsiebzig ist. Ich glaube, das liegt daran, dass wir den Winkel negativ gemacht haben.
 float move(){
+    //cout << "why aren't we moving"<<endl;
     float radi = -xydirection*PI/180;
     float gadi = -xzdirection*PI/180;
-    float tBSqr = 1+(std::tan(radi))*(std::tan(radi));
-    tBSqr += (std::tan(gadi))*(std::tan(gadi));
-    float xM= normalMovement/(std::sqrt(tBSqr));
-    //xMovement += nM*std::cos(gadi);
-    float yM=xM*std::tan(radi);//nM*std::sin(radi);
-    float zM=xM*std::tan(gadi);//nM*std::sin(gadi);
+    const vector<float> vecc = {1,std::tan(radi),std::tan(gadi)};
+    float xM= normalMovement/RMS(vecc);
+    float yM=xM*std::tan(radi);
+    float zM=xM*std::tan(gadi);
     float t1 = position[0]+round(100.0*xM)/100.0;
     float t2 = position[1]+round(100.0*yM)/100.0;
     float t3 = position[2]+round(100.0*zM)/100.0;
@@ -245,14 +242,12 @@ float move(){
     position[0] = t1;
     position[1] = t2;
     position[2] = t3;
-    //cout <<endl<< position[0]<<", "<<position[1]<<endl<<endl;
     return 0;
 }
 
 /*Bak adam bize diyecek ki 009A donmek istiyorum
 Biz bunu 0x19+0 xz yonunde 0,   9x19+10 181 xy yonunde donmek
 istiyourm diye anliyacagiz*/
-
 
 int giveNona(string binput){
     //binput here is B9 or JJ type 2 digits
@@ -273,31 +268,6 @@ int giveNona(string binput){
         }
     }
     return convertedDegrees;
-}
-
-int cnvrtFrmNonadeci(string input){
-    //here we are giving a 4 ncit input
-    //and looking to give an 6 digit output
-    /*in the form of: XXXZZZ
-    string xzx = input[0]+input[1];
-    string XZX = std::to_string(giveNona(xzx));//
-    string xyx = input[2]+input[3];
-    string XYX = std::to_string(giveNona(xyx));//
-    if (XZX.length()<3){
-        XZX+="0";
-        if (XZX.length()<3){
-            XZX += "0";
-        }
-    }
-    if (XYX.length()<3){
-        XYX+="0";
-        if (XYX.length()<3){
-            XYX+="0";
-        }
-    }
-    string code = std::to_string(XZX)+std::to_string(XYX);
-    */
-    return 0;
 }
 
 int turn(){
@@ -333,7 +303,8 @@ float setSpeed(){
     std::getline(std::cin, newSpeed);
     float num = normalMovement;
     try {
-        num = stof(newSpeed);
+        num = toBinary(newSpeed);
+        cout << num<<endl;
     }catch(std::invalid_argument){
         cout << endl<< endl<<"Invalid Input"<<endl<<endl;
     }
@@ -344,16 +315,10 @@ float setSpeed(){
 float getDistance();
 
 int giveInfo(){
-    cout << endl << endl;
-    cout << "You are at: "<<position[0]<<", "<<position[1]<<", "<<position[2];
-    cout << endl<< "xydirection: "<< xydirection<< " Degrees";
-    cout << endl<< "xzdirection: "<< xzdirection<< " Degrees";
-    cout << endl << "Speed: " << normalMovement;
-    cout << endl << "Distance from origin: " << 0.01*round(100*getDistance());
+    cout << endl << endl<< "You are at: "<<position[0]<<", "<<position[1]<<", "<<position[2]<< endl<< "xydirection: "<< xydirection<< " Degrees"<< endl<< "xzdirection: "<< xzdirection<< " Degrees"<< endl << "Speed: " << normalMovement<< endl << "Distance from origin: " << 0.01*round(100*getDistance());
     // This display only needs the distance, so it reads that field from the
     // same result type used by getBall and autoGetBall.
-    cout << endl << "Distance to closest Ball: " << getClosestBallInfo()[DISTANCE_INDEX];
-    cout<<endl<<"Number of balls: "<<balls.size()<<endl<< endl;
+    cout << endl << "Distance to closest Ball: " << getClosestBallInfo()[DISTANCE_INDEX]<<endl<<"Number of balls: "<<balls.size()<<endl<< endl;
     return 0;
 }
 string checkCommand(string cmd);
@@ -361,25 +326,67 @@ float getDistance(){
     float n1 = position[0];
     float n2 = position[1];
     float n3 = position[2];
-    float sumOfSquares = n1*n1+n2*n2+n3*n3;
-    return std::sqrt(sumOfSquares);
+    const vector<float> vecco = {n1,n2,n3};
+    return RMS(vecco);
 }
-string nextCommand()
-{//To run this type of single line script 
-//you need to have the number written
-//No wait you can just ignore the rest of the command after 
-//set speed
+string nextCommand(string gonogo)
+{
     string input;
-    std::getline(std::cin, input);
-    //input.pop_back();
+    if(gonogo.length()<2){
+        std::getline(std::cin, input);
+    }else{
+        input = gonogo;   
+    }
+    bool end = 0;
+    vector<string> funcs;
     for (int ii=0;ii<input.length()/3;ii++){
         string commaned;
         commaned += input[ii*3];
         commaned += input[ii*3+1];
         commaned += input[ii*3+2];
-        //cout <<"code: "<<commaned<<endl;
-        if (checkCommand(commaned)=="break"){
-            break;
+        //This creates functions with commands in between "fun" commands
+        //I am thinking of using indexes for calling the functions
+        //The user would either have to remember the indexes or input another vector with names of functions
+        if (end == 1){
+            if (commaned == "fun"){
+                end=0;
+                functions.push_back(funcs);
+                string nameOfFunc;
+                //can be named as one of the original functions and mess up slightly
+                cout<<"Enter 3 character function name, should be different than the original functions: ";
+                std::getline(std::cin, nameOfFunc);
+                functionen.push_back(nameOfFunc);
+                for (string comend : funcs){
+                    cout << comend << endl;
+                }
+                funcs.clear();
+            }else{
+                funcs.push_back(commaned);    
+            }
+        }else{
+            if(commaned == "fun"){
+                end = 1;
+            }else{
+                size_t iters = 0;
+                bool found = false;
+                for (string funky: functionen){
+                    if (commaned == funky){
+                        found = true;
+                        string fullCommand;
+                        for(string cmd: functions[iters]){
+                            fullCommand += cmd;
+                            //make the function a string
+                        }
+                        nextCommand(fullCommand);
+                        //executes the function
+                        break;
+                    }
+                    iters ++;
+                }
+                if (found == false){
+                    checkCommand(commaned);
+                }
+            }
         }
     }
     return input;
@@ -394,7 +401,6 @@ string checkCommand(string cmd){
     }
     if (cmd == "010"){
         setSpeed();
-        //input = "break";
     }
     if (cmd == "011"){
         giveInfo();
@@ -408,26 +414,31 @@ string checkCommand(string cmd){
     if (cmd == "110"){
         autoGetBall();
     }
-    //cout << endl<< cmd<<endl;
+    if (cmd == "cmd"){
+        cout << "current functions: . . ";
+        for (string funky : functionen){
+            cout << funky<<" . . ";    
+        }
+        cout << endl;
+    }
+    if (cmd == "111" && lastCommand!="111"){
+        cout << endl;
+        checkCommand(lastCommand);
+    }
+    lastCommand = cmd;
     return input;
 }
 //00 JJ==360 Degrees
-//A B C D E F G H I 
-//0 1 2 3 4 5 6 7 8
+//A B C D E F G H I J 
+//0 1 2 3 4 5 6 7 8 9
 int main()
 {
-    //vector<int> balls = {9};balls.push_back(1);//for (int num : balls){
-    cout << "Instructions:"<<endl<< "000 to move"<< endl;
-    cout <<"001 to turn"<<endl<<"010 to set speed"<<endl;
-    cout <<"011 to display current status"<< endl;
-    cout << "100 to get ball"<<endl<<"101 to place ball"<<endl;
-    cout << "110 to auto get ball"<<endl;
-    cout << "Turning is 4 bit nonadecimal or base-19. The first 2 digits are turning in the xz plane, the second 2 digits are for turning in the xy plane A(10) B C D E F G H I(18)";
+    cout << "Instructions:"<<endl<< "000 to move"<< endl<<"001 to turn"<<endl<<"010 to set speed"<<endl<<"011 to display current status"<< endl<< "100 to get ball"<<endl<<"101 to place ball"<<endl<< "110 to auto get ball"<<endl<<endl<< "Turning is a 4 digit nonadecimal or base-19 code. The first 2 digits are turning in the xz plane, the second 2 digits are for turning in the xy plane A(10) B C D E F G H I(18)"<<endl<<endl<< "Use ..fun.. to create a command then enter the name for the command.\nReminder: don't call the command you created in the command";
     giveInfo();
     string line;
     while (true){
         cout << "Enter next command: ";
-        line = nextCommand();
+        line = nextCommand("1");
     }
     return 0;
 }
