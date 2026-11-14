@@ -62,7 +62,6 @@ float RMS(vector<float> numbas){
 int powar(int numba, int powa){
     int out = 1;
     while(true){
-        cout <<numba<<"   "<<powa<<endl;
         if (powa%2 == 0 && powa){
             numba *= numba;
             powa /= 2;
@@ -227,15 +226,15 @@ float move(){
     float t2 = position[1]+round(100.0*yM)/100.0;
     float t3 = position[2]+round(100.0*zM)/100.0;
     if (std::abs(t1)>= radius){
-        t1 = radius*t1/std::abs(t1)-0.01;
+        t1 = radius*t1/std::abs(t1)-0.01f;
         cout <<endl<< "Caution: Hit Wall X"<<endl<<endl;
     }
     if (std::abs(t2)>=radius){
-        t2 = radius*t2/std::abs(t2)-0.01;
+        t2 = radius*t2/std::abs(t2)-0.01f;
         cout <<endl<<"Caution: Hit Wall Y"<<endl<<endl;
     }
     if (std::abs(t3)>=radius){
-        t3 = radius*t3/std::abs(t3)-0.01;
+        t3 = radius*t3/std::abs(t3)-0.01f;
         cout <<endl<<"Caution: Hit Wall Z"<<endl<<endl;
         
     }
@@ -339,7 +338,7 @@ string nextCommand(string gonogo)
     }
     bool end = 0;
     vector<string> funcs;
-    for (int ii=0;ii<input.length()/3;ii++){
+    for (size_t ii=0; ii<input.length()/3;ii++){
         string commaned;
         commaned += input[ii*3];
         commaned += input[ii*3+1];
