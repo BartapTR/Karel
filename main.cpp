@@ -269,11 +269,9 @@ int giveNona(string binput){
     return convertedDegrees;
 }
 
-int turn(){
-    string degres;
-    cout << "90 degrees is 4E, 180 is 99, 270 is E4, 360 is II(max 19^2-1)"<<endl;
-    cout << "Enter amount in degrees in nonadecimal to turn: ";
-    std::getline(std::cin,degres);
+int turn(string degres){
+    //cout << "Enter amount in degrees in nonadecimal to turn: ";
+    //std::getline(std::cin,degres);
     int xzdegre = 0;
     int xydegre = 0;
     //Now 
@@ -296,10 +294,7 @@ int turn(){
     return 0;
 }
 
-float setSpeed(){
-    string newSpeed;
-    cout << "Enter new speed: ";
-    std::getline(std::cin, newSpeed);
+float setSpeed(string newSpeed){
     float num = normalMovement;
     try {
         num = toBinary(newSpeed);
@@ -314,7 +309,7 @@ float setSpeed(){
 float getDistance();
 
 int giveInfo(){
-    cout << endl << endl<< "You are at: "<<position[0]<<", "<<position[1]<<", "<<position[2]<< endl<< "xydirection: "<< xydirection<< " Degrees"<< endl<< "xzdirection: "<< xzdirection<< " Degrees"<< endl << "Speed: " << normalMovement<< endl << "Distance from origin: " << 0.01*round(100*getDistance());
+    cout << endl << "You are at: "<<position[0]<<", "<<position[1]<<", "<<position[2]<< endl<< "xydirection: "<< xydirection<< " Degrees"<< endl<< "xzdirection: "<< xzdirection<< " Degrees"<< endl << "Speed: " << normalMovement<< endl << "Distance from origin: " << 0.01*round(100*getDistance());
     // This display only needs the distance, so it reads that field from the
     // same result type used by getBall and autoGetBall.
     cout << endl << "Distance to closest Ball: " << getClosestBallInfo()[DISTANCE_INDEX]<<endl<<"Number of balls: "<<balls.size()<<endl<< endl;
@@ -328,8 +323,7 @@ float getDistance(){
     const vector<float> vecco = {n1,n2,n3};
     return RMS(vecco);
 }
-string nextCommand(string gonogo)
-{
+string nextCommand(string gonogo){
     string input;
     if(gonogo.length()<2){
         std::getline(std::cin, input);
@@ -337,17 +331,65 @@ string nextCommand(string gonogo)
         input = gonogo;   
     }
     bool end = 0;
+    int spec = 0;
+    string specComs;
+    //So I will be adding a way to include nonadecimal inputs for the speed and turning commands
+    //To do this the input is going to be standardized into being between paranthesis 4 digits(which makes it 6 digits or 0 mod 3)
+    //If it's inside a function it still doesn't matter because the command is still 3x characters long
+    //but the evaluation is different when it is within a function,
+    //let's first handle the normal non-function version
+
+    //I've changed the input for speed and turn commands, and they will be executed directly from here
+    //Also thinking about executing every command from here actually
+
+    /*
+    Input:
+    000001(00EE)011
+    becomes 000, 001(00EE), 011
+    001(00EE)
+    make 001 wait then send it together when spec = 2
+    2nd Input:
+    fun000001(004e)fun
+    end = 1
+    not func, adding to funcs
+    not func, adding to funcs
+    not func, adding to funcs
+    not func, adding to funcs
+    end = 0
+    */
     vector<string> funcs;
     for (size_t ii=0; ii<input.length()/3;ii++){
         string commaned;
+        if ((spec == 0 && end == 0) || end == 1){
         commaned += input[ii*3];
         commaned += input[ii*3+1];
         commaned += input[ii*3+2];
+        }else if(spec == 1 || spec == 11){
+            specComs += input[ii*3+1];
+            specComs += input[ii*3+2];
+            spec += 1;
+        }else if(spec == 2 || spec == 12){
+            specComs += input[ii*3];
+            specComs += input[ii*3+1];
+            if (spec == 2 && end == 0){
+                turn(specComs);
+            }else if(end == 0){
+                setSpeed(specComs);
+            }
+            specComs = "";
+            spec = 0;
+        }
+        if (spec == 0){
+            if (commaned == "001"){
+                spec = 1;
+            }else if(commaned == "010"){
+                spec = 11;
+            }
+        }
         //This creates functions with commands in between "fun" commands
-        //I am thinking of using indexes for calling the functions
-        //The user would either have to remember the indexes or input another vector with names of functions
-        if (end == 1){
-            if (commaned == "fun"){
+        //The user inputs another vector with names of functions, uses those names to call the functions
+        if (end == 1){//Inside the function
+            if (commaned == "fun"){//closing the function
                 end=0;
                 functions.push_back(funcs);
                 string nameOfFunc;
@@ -359,30 +401,30 @@ string nextCommand(string gonogo)
                     cout << comend << endl;
                 }
                 funcs.clear();
-            }else{
+            }else{//lines of the function
                 funcs.push_back(commaned);    
             }
-        }else{
-            if(commaned == "fun"){
+        }else{//not inside function
+            if(commaned == "fun"){//opening the function
                 end = 1;
-            }else{
+            }else{//calling a function/plain
                 size_t iters = 0;
                 bool found = false;
-                for (string funky: functionen){
+                for (string funky: functionen){//Calling a new function
                     if (commaned == funky){
                         found = true;
                         string fullCommand;
                         for(string cmd: functions[iters]){
                             fullCommand += cmd;
-                            //make the function a string
+                            //make the commands of the function a string
                         }
                         nextCommand(fullCommand);
-                        //executes the function
+                        //executes the new function
                         break;
                     }
                     iters ++;
                 }
-                if (found == false){
+                if (found == false){//plain--Spec functions && (commaned != "001" && commaned != "010")
                     checkCommand(commaned);
                 }
             }
@@ -394,12 +436,6 @@ string checkCommand(string cmd){
     string input = "";
     if (cmd == "000"){
         move();    
-    }
-    if (cmd == "001"){
-        turn();
-    }
-    if (cmd == "010"){
-        setSpeed();
     }
     if (cmd == "011"){
         giveInfo();
@@ -421,7 +457,6 @@ string checkCommand(string cmd){
         cout << endl;
     }
     if (cmd == "111" && lastCommand!="111"){
-        cout << endl;
         checkCommand(lastCommand);
     }
     lastCommand = cmd;
@@ -432,7 +467,8 @@ string checkCommand(string cmd){
 //0 1 2 3 4 5 6 7 8 9
 int main()
 {
-    cout << "Instructions:"<<endl<< "000 to move"<< endl<<"001 to turn"<<endl<<"010 to set speed"<<endl<<"011 to display current status"<< endl<< "100 to get ball"<<endl<<"101 to place ball"<<endl<< "110 to auto get ball"<<endl<<endl<< "Turning is a 4 digit nonadecimal or base-19 code. The first 2 digits are turning in the xz plane, the second 2 digits are for turning in the xy plane A(10) B C D E F G H I(18)"<<endl<<endl<< "Use ..fun.. to create a command then enter the name for the command.\nReminder: don't call the command you created in the command";
+    cout << "Instructions:"<<endl<< "000 to move"<< endl<<"001 to turn"<<endl<<"010 to set speed"<<endl<<"011 to display current status"<< endl<< "100 to get ball"<<endl<<"101 to place ball"<<endl<< "110 to auto get ball"<<endl<<endl<< "Turning is a 4 digit nonadecimal or base-19 code. The first 2 digits are turning in the xz plane, the second 2 digits are for turning in the xy plane A(10) B C D E F G H I(18)"<<endl<<endl<< "Use ..fun.. to create a command then enter the name for the command.\nReminder: don't call the command you created in the command\n";
+    cout << "90 degrees is 4E, 180 is 99, 270 is E4, 360 is II(max 19^2-1)"<<endl;
     giveInfo();
     string line;
     while (true){
