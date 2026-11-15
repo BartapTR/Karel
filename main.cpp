@@ -16,8 +16,9 @@ using std::endl;
 // elements directly (unlike vector, it cannot grow or shrink), so it suits
 // fixed-size data such as one XYZ position.
 using Position = array<float, 3>;
-vector<vector<string>> functions;
-vector<string> functionen;
+using strVec = vector<string>;
+vector<strVec> functions;
+strVec functionen;
 
 // getClosestBallInfo returns one compact snapshot with this fixed layout:
 // [distance, delta X, delta Y, delta Z, index in balls].
@@ -61,15 +62,16 @@ float RMS(vector<float> numbas){
 
 int powar(int numba, int powa){
     int out = 1;
-    while(true){
-        if (powa%2 == 0 && powa){
+    if (powa == 0){
+        return out;
+    }
+    while(powa >1){
+        if (powa%2 == 0){
             numba *= numba;
             powa /= 2;
         }else if (powa >1){
             powa-=1;
             out *= numba;
-        }else{
-            break;
         }
     }
     out *= numba;
@@ -77,14 +79,13 @@ int powar(int numba, int powa){
 }
 
 int toBinary(string inphut){
-    size_t lent = inphut.length();
     int numbir = 0;
-    for(size_t i=0;i<lent;i++){
+    for(int i=0;i<4;i++){
         if (inphut[i]=='0'){
             continue;    
         }
-        cout << i<< endl;
-        numbir += (inphut[i]-'0')*powar(2, lent-i-1);
+        numbir += (inphut[i]-'0')*powar(2, 3-i);
+        cout << inphut[i] <<"  "<< i << " " << numbir << endl;
     }
     return numbir;
 }
@@ -357,7 +358,7 @@ string nextCommand(string gonogo){
     not func, adding to funcs
     end = 0
     */
-    vector<string> funcs;
+    strVec funcs;
     for (size_t ii=0; ii<input.length()/3;ii++){
         string commaned;
         if ((spec == 0 && end == 0) || end == 1){
