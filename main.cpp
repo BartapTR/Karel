@@ -44,7 +44,7 @@ vector<Position> balls = {};
 //Maybe gravity, time and saving
 //Turn it into an actual game?
 
-float radius = 30.0;
+const float radius = 30.0;
 
 int xydirection = 0;
 int xzdirection = 0;
@@ -90,14 +90,12 @@ int toBinary(string inphut){
     return numbir;
 }
 
-float placeBall(){
+void placeBall(){
     // Both position and each entry in balls use the same three-coordinate
     // type, so this copies the current XYZ position into the dynamic vector.
     balls.push_back(position);
-    return 1;
 }
 
-// A declaration lets callers above the function use it before its definition.
 ClosestBallInfo getClosestBallInfo();
 
 float getBall(){
@@ -215,8 +213,7 @@ ClosestBallInfo getClosestBallInfo(){
     // fixed-size copy of the result (small arrays like this are inexpensive).
     return closestBall;
 }
-float move(){
-    //cout << "why aren't we moving"<<endl;
+void move(){
     float radi = -xydirection*PI/180;
     float gadi = -xzdirection*PI/180;
     const vector<float> vecc = {1,std::tan(radi),std::tan(gadi)};
@@ -242,7 +239,6 @@ float move(){
     position[0] = t1;
     position[1] = t2;
     position[2] = t3;
-    return 0;
 }
 
 /*Bak adam bize diyecek ki 009A donmek istiyorum
@@ -254,11 +250,14 @@ int giveNona(string binput){
     char rep[9]= {'A','B','C','D','E','F','G','H','I'};
     int nums[9] = {10 ,11 ,12 ,13 ,14 ,15 ,16 ,17 ,18};
     int convertedDegrees = 0;
+
+    //Actual number for the digit, *19^placement from the left
     if (std::isdigit(binput[0])){
         convertedDegrees += (binput[0]-'0')*19;
     }if(std::isdigit(binput[1])){
         convertedDegrees += (binput[1]-'0');
     }
+    //Letter as the digit, find and use
     for (int i=0;i<9;i++){
         if (binput[0] == rep[i]){
             convertedDegrees += nums[i]*19;
@@ -270,51 +269,38 @@ int giveNona(string binput){
     return convertedDegrees;
 }
 
-int turn(string degres){
-    //cout << "Enter amount in degrees in nonadecimal to turn: ";
-    //std::getline(std::cin,degres);
+void turn(string degres){
     int xzdegre = 0;
     int xydegre = 0;
-    //Now 
-    std::transform(degres.begin(),degres.end(),degres.begin(),[](unsigned char c){return std::toupper(c);});
-    if (degres.length()>=2){
-        string xyx = degres.substr(0, 2);
-        xydegre = giveNona(xyx);
-        if (degres.length()>=4){
-            xzdegre = xydegre;
-            string xzx = degres.substr(2, 2);
-            xydegre = giveNona(xzx);
-        }
-    }
     
+    std::transform(degres.begin(),degres.end(),degres.begin(),[](unsigned char c){return std::toupper(c);});
+    if (degres.length()==4){
+        string xyx = degres.substr(0, 2);
+        xzdegre = giveNona(xyx);
+        string xzx = degres.substr(2, 2);
+        xydegre = giveNona(xzx);
+    }
     xydirection += xydegre;
     xydirection %= 360;
     
     xzdirection +=xzdegre;
     xzdirection %= 360;
-    return 0;
 }
 
-float setSpeed(string newSpeed){
-    float num = normalMovement;
-    try {
-        num = toBinary(newSpeed);
-        cout << num<<endl;
-    }catch(std::invalid_argument){
-        cout << endl<< endl<<"Invalid Input"<<endl<<endl;
-    }
+void setSpeed(string newSpeed){
+    int num = normalMovement;
+    num = toBinary(newSpeed);
     normalMovement = num;
-    return 0;
+    cout << normalMovement << endl;
 }
 
 float getDistance();
 
-int giveInfo(){
+void giveInfo(){
     cout << endl << "You are at: "<<position[0]<<", "<<position[1]<<", "<<position[2]<< endl<< "xydirection: "<< xydirection<< " Degrees"<< endl<< "xzdirection: "<< xzdirection<< " Degrees"<< endl << "Speed: " << normalMovement<< endl << "Distance from origin: " << 0.01*round(100*getDistance());
     // This display only needs the distance, so it reads that field from the
     // same result type used by getBall and autoGetBall.
     cout << endl << "Distance to closest Ball: " << getClosestBallInfo()[DISTANCE_INDEX]<<endl<<"Number of balls: "<<balls.size()<<endl<< endl;
-    return 0;
 }
 string checkCommand(string cmd);
 float getDistance(){
@@ -334,30 +320,6 @@ string nextCommand(string gonogo){
     bool end = 0;
     int spec = 0;
     string specComs;
-    //So I will be adding a way to include nonadecimal inputs for the speed and turning commands
-    //To do this the input is going to be standardized into being between paranthesis 4 digits(which makes it 6 digits or 0 mod 3)
-    //If it's inside a function it still doesn't matter because the command is still 3x characters long
-    //but the evaluation is different when it is within a function,
-    //let's first handle the normal non-function version
-
-    //I've changed the input for speed and turn commands, and they will be executed directly from here
-    //Also thinking about executing every command from here actually
-
-    /*
-    Input:
-    000001(00EE)011
-    becomes 000, 001(00EE), 011
-    001(00EE)
-    make 001 wait then send it together when spec = 2
-    2nd Input:
-    fun000001(004e)fun
-    end = 1
-    not func, adding to funcs
-    not func, adding to funcs
-    not func, adding to funcs
-    not func, adding to funcs
-    end = 0
-    */
     strVec funcs;
     for (size_t ii=0; ii<input.length()/3;ii++){
         string commaned;
@@ -365,18 +327,19 @@ string nextCommand(string gonogo){
         commaned += input[ii*3];
         commaned += input[ii*3+1];
         commaned += input[ii*3+2];
-        }else if(spec == 1 || spec == 11){
+        }else if(spec == 1 || spec == 11){//ignore the first char
             specComs += input[ii*3+1];
             specComs += input[ii*3+2];
             spec += 1;
-        }else if(spec == 2 || spec == 12){
+        }else if(spec == 2 || spec == 12){//ignore the last char
             specComs += input[ii*3];
             specComs += input[ii*3+1];
-            if (spec == 2 && end == 0){
+            if (spec == 2 && end == 0){//execute turn command
                 turn(specComs);
-            }else if(end == 0){
+            }else if(end == 0){//execute speed command
                 setSpeed(specComs);
             }
+            //reset specComs and spec
             specComs = "";
             spec = 0;
         }
@@ -451,9 +414,9 @@ string checkCommand(string cmd){
         autoGetBall();
     }
     if (cmd == "cmd"){
-        cout << "current functions: . . ";
+        cout << "current functions:  ";
         for (string funky : functionen){
-            cout << funky<<" . . ";    
+            cout << funky<<" , ";    
         }
         cout << endl;
     }
@@ -463,13 +426,12 @@ string checkCommand(string cmd){
     lastCommand = cmd;
     return input;
 }
-//00 JJ==360 Degrees
-//A B C D E F G H I J 
-//0 1 2 3 4 5 6 7 8 9
+//A B C D E F G H I
+//0 1 2 3 4 5 6 7 8
 int main()
 {
-    cout << "Instructions:"<<endl<< "000 to move"<< endl<<"001 to turn"<<endl<<"010 to set speed"<<endl<<"011 to display current status"<< endl<< "100 to get ball"<<endl<<"101 to place ball"<<endl<< "110 to auto get ball"<<endl<<endl<< "Turning is a 4 digit nonadecimal or base-19 code. The first 2 digits are turning in the xz plane, the second 2 digits are for turning in the xy plane A(10) B C D E F G H I(18)"<<endl<<endl<< "Use ..fun.. to create a command then enter the name for the command.\nReminder: don't call the command you created in the command\n";
-    cout << "90 degrees is 4E, 180 is 99, 270 is E4, 360 is II(max 19^2-1)"<<endl;
+    cout << "Instructions:"<<endl<< "000 to move"<< endl<<"001 to turn--include 4 digit base-19 input between any 2 characters"<<endl<<"010 to set speed--include 4 digit binary input between any 2 characters"<<endl<<"011 to display current status"<< endl<< "100 to get ball"<<endl<<"101 to place ball"<<endl<< "110 to auto get ball"<<endl<<endl<< "Turning is a 4 digit nonadecimal or base-19 code. The first 2 digits are turning in the xz plane,\n the second 2 digits are for turning in the xy plane A(10) B C D E F G H I(18)"<<endl<<endl<< "Use ..fun.. to create a command then enter the name for the command.\nReminder: don't call the command you created in the command\n";
+    cout << "First 2 digits for turning are for the xz direction, the next two are for xy direction:\n 90 degrees is 4E, 180 is 99, 270 is E4, 360 is II(max 19^2-1)"<<endl;
     giveInfo();
     string line;
     while (true){
