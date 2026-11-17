@@ -33,6 +33,10 @@ constexpr size_t DELTA_X_INDEX = 1;
 constexpr size_t DELTA_Y_INDEX = 2;
 constexpr size_t DELTA_Z_INDEX = 3;
 constexpr size_t BALL_INDEX = 4;
+//Use both these two index groups for conditionals, but the top only for getting info
+constexpr size_t Movement_Count_INDEX = 0;
+constexpr size_t Direction_INDEX = 1;
+constexpr size_t Speed_INDEX = 2;
 
 string lastCommand;
 
@@ -319,25 +323,61 @@ string nextCommand(string gonogo){
     }
     bool end = 0;
     int spec = 0;
+
+    /*
+    So since functions have been added, the next thing is to add conditions and conditionals
+    the part about getting things between 2 commands is the same, but conditionals will be a bit different, 
+    The reason for that is the program currently doesn't have variables or anything like that
+    Also it's somewhat unrelated to use/add conditionals; however, I think I found the reason: it is to check for position, speed, direction, or
+    distance from origin. So the conditionals will be based on those things, and the commands will be based on those things as well. 
+    What I am thinking is that we use indexes for the conditionals. Will the user be able to create new/their own conditionals?
+    They should be, eventually, but for now, the conditionals will be based on the current things that can be checked.
+    As variables can be used to create better loops, right now you can set speed to 1 and move until position is exactly 10 units away from the origin, as a way to
+    crete a loop(you also need to turn to the right direction, but that is not important). 
+
+    We can just use existing infastructure(4 digit input) 1. index, 2. true or false, 3. how many commands to execute(this might push towards functions instead of specOps)
+    If we went that route, the index becomes harder or not possible: con then what?
+    Do we have to mix them?
+    Ok so this is the way to do it: con(0111)000putcon
+    disecting gives:
+    con--initializes both the end and the specCom
+    (0 False
+    111 8th index
+    000 move if false
+    put put if false
+    con--closes cond and specCom
+    */
     string specComs;
+    string funcSpec;
     strVec funcs;
+    //To make sure the conditional works with functions as well
+    if (input[0] == '('){
+        end = 1;
+        specComs == "con";
+        spec = 21;
+    }
+
     for (size_t ii=0; ii<input.length()/3;ii++){
         string commaned;
         if ((spec == 0 && end == 0) || end == 1){
         commaned += input[ii*3];
         commaned += input[ii*3+1];
         commaned += input[ii*3+2];
-        }else if(spec == 1 || spec == 11){//ignore the first char
+        }else if(spec == 1 || spec == 11 || spec == 21){//ignore the first char
             specComs += input[ii*3+1];
             specComs += input[ii*3+2];
             spec += 1;
-        }else if(spec == 2 || spec == 12){//ignore the last char
+        }else if(spec == 2 || spec == 12 || spec == 22){//ignore the last char
             specComs += input[ii*3];
             specComs += input[ii*3+1];
-            if (spec == 2 && end == 0){//execute turn command
-                turn(specComs);
-            }else if(end == 0){//execute speed command
-                setSpeed(specComs);
+            if(end == 0){
+                if (spec == 2){//execute turn command
+                    turn(specComs);
+                }else if(spec == 12){//execute speed command
+                    setSpeed(specComs);
+                }
+            }else if(specComs == "con"){
+                //Check the conditional and set the execution value to T or F
             }
             //reset specComs and spec
             specComs = "";
@@ -369,8 +409,9 @@ string nextCommand(string gonogo){
                 funcs.push_back(commaned);    
             }
         }else{//not inside function
-            if(commaned == "fun"){//opening the function
+            if(commaned == "fun" || commaned == "con"){//opening the function
                 end = 1;
+                specComs = commaned;
             }else{//calling a function/plain
                 size_t iters = 0;
                 bool found = false;
