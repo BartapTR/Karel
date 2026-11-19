@@ -33,10 +33,12 @@ constexpr size_t DELTA_X_INDEX = 1;
 constexpr size_t DELTA_Y_INDEX = 2;
 constexpr size_t DELTA_Z_INDEX = 3;
 constexpr size_t BALL_INDEX = 4;
-//Use both these two index groups for conditionals, but the top only for getting info
+
+/*Use both these two index groups for conditionals, but the top only for getting info
 constexpr size_t Movement_Count_INDEX = 0;
 constexpr size_t Direction_INDEX = 1;
 constexpr size_t Speed_INDEX = 2;
+*/
 
 string lastCommand;
 
@@ -314,6 +316,133 @@ float getDistance(){
     const vector<float> vecco = {n1,n2,n3};
     return RMS(vecco);
 }
+
+/*string conditionalCheck(string conditionStatement){
+    //The conditional statement is a 4 digit input, first 2 digits are the index of the value to check, the next 2 digits are the value to check for
+    //The index is based on the order of the values in the giveInfo function
+    //The value to check for is a 4 digit binary input
+    int index = toBinary(conditionStatement.substr(0,2));
+    int valueToCheckFor = toBinary(conditionStatement.substr(2,2));
+    int valueToCheck;
+    if (index == Movement_Count_INDEX){
+        valueToCheck = balls.size();
+    }else if(index == Direction_INDEX){
+        valueToCheck = xydirection;
+    }else if(index == Speed_INDEX){
+        valueToCheck = normalMovement;
+    }
+    if (valueToCheck == valueToCheckFor){
+        return "T";
+    }else{
+        return "F";
+    }
+
+}
+*/
+
+
+bool checkCond (string cond){
+	//const int Indexes[] = {normalMovement, xydirection, getDistance(), balls.size(), getClosestBallInfo()[DISTANCE_INDEX], position[0], position[1], position[2]};
+	const int Indexes[] = {0,1,2,3,4,5,6,7};
+	const int Comparisons[] = {'<','>','=','!'};
+
+	const int Index = Indexes[toBinary(cond.substr(0, 3))];
+	const int comparison = Comparisons[toBinary(cond.substr(3, 3))];
+	const int value = toBinary(cond.substr(6, 3));
+
+	if (comparison == '<'){
+		if (Index < value){
+            return true;
+        }else{
+	        return false;
+        }
+    }
+	if (comparison == '>'){
+		if (Index > value){
+            return true;
+        }else{
+	        return false;
+        }
+    }
+	if (comparison == '='){
+		if (Index == value){
+            return true;
+        }else{
+	        return false;
+        }
+    }
+	if (comparison == '!'){
+		if (Index != value){
+            return true;
+        }else{
+	        return false;
+        }
+    }
+}
+
+string CondEval (string statement){
+	bool IsCond = true;
+	string nonCondStatement;
+	string condition = "";
+	string newCond = "";
+	vector<bool> isTrue;
+	bool isNested = false;
+	vector<string> operations;
+	for (int i = 0; i < statement.length()/3; i++){
+		string Cmd = statement.substr(3*i, 3);
+		if (Cmd == "111" && IsCond == false){
+			isNested=true;
+			newCond += Cmd;
+		}
+		if (Cmd == "con" && isNested == true){
+            isNested=false;
+			nonCondStatement += CondEval(newCond);
+		}
+		if (IsCond){             //if((i+1)%4==1)//Index	if((i+1)%4==2)//comparison op	if((i+1)%4==3)//Value to compare against
+			if((i+1)%4==0){      //Comparison opearot between conditions
+				if(Cmd != "100" && Cmd != "101"){
+					isTrue.push_back(checkCond(condition));
+					condition = "";
+                    IsCond=false;
+                }else{
+	                operations.push_back(Cmd);
+                }
+            }else{
+				condition +=Cmd;
+            }
+		}else{
+			nonCondStatement += Cmd;
+        }
+    }
+	if (operations.size()>0){           //–Repeatedly Check/change cont if isTrue[i] is operations[i] with isTrue[i+1] 
+		vector<bool> newIsTrue = isTrue;
+		vector<string> newOperations = operations;
+		int index=0;
+		while (newIsTrue.size() != 1){
+			bool second= newIsTrue[index+1];
+			string oper = newOperations[index];
+            newIsTrue[index+1] = newIsTrue.back();
+            newIsTrue.pop_back();
+            newOperations[index] = newOperations.back();
+            newOperations.pop_back();
+			if (oper=="100"){
+				if(isTrue[index] || second){
+					newIsTrue[index] = true;	
+                }else{
+					newIsTrue[index] = false;		
+                }	
+            }if (oper=="101"){
+				if(isTrue[index] && isTrue[index+1]){
+					newIsTrue[index] = true;
+				}else{
+					newIsTrue[index] = false;
+				}
+			}
+		}
+		return nonCondStatement;
+	}
+}
+
 string nextCommand(string gonogo){
     string input;
     if(gonogo.length()<2){
@@ -350,19 +479,27 @@ string nextCommand(string gonogo){
     string specComs;
     string funcSpec;
     strVec funcs;
+
+    bool isConditional = false;
     //To make sure the conditional works with functions as well
-    if (input[0] == '('){
-        end = 1;
-        specComs == "con";
-        spec = 21;
-    }
+
+    //fun 111 (010 110 111) 100 (011 000 101) 001(004e) 000 000 000 fun
+    //fun con  speed>= 7/n  and   direct==90  turnxy90  mov mov mov fun
+
+    //So construct a function exactly the same, but when it is called, a conditional c++ function is called and the conditional is checked,
+    //if true, the actual command part is resent here 
 
     for (size_t ii=0; ii<input.length()/3;ii++){
         string commaned;
         if ((spec == 0 && end == 0) || end == 1){
-        commaned += input[ii*3];
-        commaned += input[ii*3+1];
-        commaned += input[ii*3+2];
+            commaned += input[ii*3];
+            commaned += input[ii*3+1];
+            commaned += input[ii*3+2];
+            if (funcSpec == "fun"){//First command after fun 
+                if (commaned == "111"){//Condition command
+                    isConditional = true;
+                }
+            }
         }else if(spec == 1 || spec == 11 || spec == 21){//ignore the first char
             specComs += input[ii*3+1];
             specComs += input[ii*3+2];
@@ -409,9 +546,8 @@ string nextCommand(string gonogo){
                 funcs.push_back(commaned);    
             }
         }else{//not inside function
-            if(commaned == "fun" || commaned == "con"){//opening the function
+            if(commaned == "fun" || commaned == "111"){//opening the function
                 end = 1;
-                specComs = commaned;
             }else{//calling a function/plain
                 size_t iters = 0;
                 bool found = false;
@@ -423,7 +559,11 @@ string nextCommand(string gonogo){
                             fullCommand += cmd;
                             //make the commands of the function a string
                         }
-                        nextCommand(fullCommand);
+                        if (isConditional){
+                            nextCommand(CondEval(fullCommand));
+                        }else{
+                            nextCommand(fullCommand);
+                        }
                         //executes the new function
                         break;
                     }
@@ -434,6 +574,7 @@ string nextCommand(string gonogo){
                 }
             }
         }
+        funcSpec = commaned;
     }
     return input;
 }
