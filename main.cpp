@@ -487,13 +487,16 @@ string CondEval (string statement){
     }
 }
 
-string nextCommand(string gonogo){
+string nextCommand(string gonogo, bool isConditionalen){
     string input;
     if(gonogo.length()<2){
         std::getline(std::cin, input);
     }else{
         input = gonogo;   
     }
+
+    cout << "Input: " << input << endl;
+
     bool end = 0;
     int spec = 0;
 
@@ -565,6 +568,7 @@ string nextCommand(string gonogo){
         //This creates functions with commands in between "fun" commands
         //The user inputs another vector with names of functions, uses those names to call the functions
         if (end == 1){//Inside the function
+            spec = 0;
             if (commaned == "fun"){//closing the function
                 end=0;
                 functions.push_back(funcs);
@@ -578,12 +582,14 @@ string nextCommand(string gonogo){
                 if (nests-1 ==0){
                     end=0;
                     isConditional = false;
-                    string nameOfFunc;
-                    cout<<"Enter 3 character conditional name, should be different than the original functions: ";
-                    std::getline(std::cin, nameOfFunc);
-                    functionen.push_back(nameOfFunc);
-                    functions.push_back(funcs);
-                    nextCommand(CondEval(funcs));
+                    if (isConditionalen != true){
+                        string nameOfFunc;
+                        cout<<"Enter 3 character conditional name, should be different than the original functions: ";
+                        std::getline(std::cin, nameOfFunc);
+                        functionen.push_back(nameOfFunc);
+                        functions.push_back("111" + funcs + "con");
+                    }
+                    nextCommand(CondEval(funcs), false);
                     funcs = "";
                 }else{
                     nests -= 1;
@@ -593,6 +599,7 @@ string nextCommand(string gonogo){
                 funcs += commaned;    
             }
         }else{//not inside function
+            cout << "Command: " << commaned << endl << input << "  " << ii << "  " <<  input.substr(ii*3, 3) << endl;
             if(commaned == "111"){
                 end= 1;
                 nests += 1;
@@ -606,11 +613,7 @@ string nextCommand(string gonogo){
                     if (commaned == funky){
                         found = true;
                         string fullCommand= functions[iters];
-                        if (isConditional){
-                            nextCommand(CondEval("111" + fullCommand+ "con"));
-                        }else{
-                            nextCommand(fullCommand);
-                        }
+                        nextCommand(fullCommand, true);
                         //executes the new function
                         break;
                     }
@@ -665,7 +668,7 @@ int main()
     string line;
     while (true){
         cout << "Enter next command: ";
-        line = nextCommand("1");
+        line = nextCommand("1", false);
     }
     return 0;
 }
