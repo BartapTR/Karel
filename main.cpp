@@ -5,6 +5,7 @@
 #include <string>
 #include <cctype>
 #include <algorithm>
+#include <unordered_map>
 
 using std::vector;
 using std::array;
@@ -19,6 +20,7 @@ using Position = array<float, 3>;
 using strVec = vector<string>;
 strVec functions;
 strVec functionen;
+std::unordered_map<string, string> functionMap;// merge functionen and functions into a single map for easier lookup, first is the name
 
 // getClosestBallInfo returns one compact snapshot with this fixed layout:
 // [distance, delta X, delta Y, delta Z, index in balls].
@@ -66,32 +68,15 @@ float RMS(vector<float> numbas){
     return rms;
 }
 
-int powar(int numba, int powa){
-    int out = 1;
-    if (powa == 0){
-        return out;
-    }
-    while(powa >1){
-        if (powa%2 == 0){
-            numba *= numba;
-            powa /= 2;
-        }else if (powa >1){
-            powa-=1;
-            out *= numba;
-        }
-    }
-    out *= numba;
-    return out;
-}
+//"we're using std::pow now"
 
-int toBinary(string inphut){
+int convFromBinary(string inphut){
     int numbir = 0;
     for(int i=0;i<inphut.length();i++){
         if (inphut[i]=='0'){
             continue;    
         }
-        numbir += (inphut[i]-'0')*powar(2, inphut.length()-i-1);
-        //cout << inphut[i] <<"  "<< i << " " << numbir << endl;
+        numbir += (inphut[i]-'0')*std::pow(2, inphut.length()-i-1);
     }
     return numbir;
 }
@@ -247,10 +232,6 @@ void move(){
     position[2] = t3;
 }
 
-/*Bak adam bize diyecek ki 009A donmek istiyorum
-Biz bunu 0x19+0 xz yonunde 0,   9x19+10 181 xy yonunde donmek
-istiyourm diye anliyacagiz*/
-
 int giveNona(string binput){
     //binput here is B9 or JJ type 2 digits
     char rep[9]= {'A','B','C','D','E','F','G','H','I'};
@@ -295,15 +276,15 @@ void turn(string degres){
 
 void setSpeed(string newSpeed){
     int num = normalMovement;
-    num = toBinary(newSpeed);
+    num = convFromBinary(newSpeed);
     normalMovement = num;
-    cout << normalMovement << endl;
+    cout << "Set speed to " << normalMovement << endl;
 }
 
 float getDistance();
 
 void giveInfo(){
-    cout << endl << "You are at: "<<position[0]<<", "<<position[1]<<", "<<position[2]<< endl<< "xydirection: "<< xydirection<< " Degrees"<< endl<< "xzdirection: "<< xzdirection<< " Degrees"<< endl << "Speed: " << normalMovement<< endl << "Distance from origin: " << 0.01*round(100*getDistance());
+    cout << endl << "You are at: "<<position[0]<<", "<<position[1]<<", "<<position[2]<< endl<< "with a x/y-direction: "<< xydirection<< " Degrees"<< endl<< "with a x/z-direction: "<< xzdirection<< " Degrees"<< endl << "Speed: " << normalMovement<< endl << "Distance from origin: " << 0.01*round(100*getDistance());
     // This display only needs the distance, so it reads that field from the
     // same result type used by getBall and autoGetBall.
     cout << endl << "Distance to closest Ball: " << getClosestBallInfo()[DISTANCE_INDEX]<<endl<<"Number of balls: "<<balls.size()<<endl<< endl;
@@ -321,8 +302,8 @@ float getDistance(){
     //The conditional statement is a 4 digit input, first 2 digits are the index of the value to check, the next 2 digits are the value to check for
     //The index is based on the order of the values in the giveInfo function
     //The value to check for is a 4 digit binary input
-    int index = toBinary(conditionStatement.substr(0,2));
-    int valueToCheckFor = toBinary(conditionStatement.substr(2,2));
+    int index = convFromBinary(conditionStatement.substr(0,2));
+    int valueToCheckFor = convFromBinary(conditionStatement.substr(2,2));
     int valueToCheck;
     if (index == Movement_Count_INDEX){
         valueToCheck = balls.size();
@@ -343,47 +324,14 @@ float getDistance(){
 
 bool checkCond (string cond){
 	//const int Indexes[] = {normalMovement, xydirection, getDistance(), balls.size(), getClosestBallInfo()[DISTANCE_INDEX], position[0], position[1], position[2]};
-	const int Indexes[8] = {0,1,2,3,4,5,6,7};
-	const char Comparisons[4] = {'<','>','=','!'};
-
-	const int Index = Indexes[toBinary(cond.substr(0, 3))];
-	const char comparison = Comparisons[toBinary(cond.substr(3, 3))];
-	const int value = toBinary(cond.substr(6, 3));
-
-    cout << "Index: " << cond.substr(0, 3) << " Comparison: " << toBinary(cond.substr(0, 3)) << " Value: " << Indexes[toBinary(cond.substr(0, 3))] << endl;
-    cout << "Index: " << cond.substr(3, 3) << " Comparison: " << toBinary(cond.substr(3, 3)) << " Value: " << Comparisons[toBinary(cond.substr(3, 3))] << endl;
-    cout << "Index: " << cond.substr(6, 3) << " Comparison && Value is: " << toBinary(cond.substr(6, 3)) << endl;
+	const int Index = convFromBinary(cond.substr(0, 3));//No need for a list without using runtime values
+	const int comparison = convFromBinary(cond.substr(3, 3));
+	const int value = convFromBinary(cond.substr(6, 3));
 
     cout <<  Index << "  "<< comparison << "  "<< value << endl;
+    bool comps[] = {Index < value, Index > value, Index == value, Index != value};
 
-	if (comparison == '<'){
-		if (Index < value){
-            return true;
-        }else{
-	        return false;
-        }
-    }
-	if (comparison == '>'){
-		if (Index > value){
-            return true;
-        }else{
-	        return false;
-        }
-    }
-	if (comparison == '='){
-		if (Index == value){
-            return true;
-        }else{
-	        return false;
-        }
-    }
-	if (comparison == '!'){
-		if (Index != value){
-            return true;
-        }else{
-	        return false;
-        }
-    }
+	return comps[comparison];
 }
 
 string CondEval (string statement){
@@ -395,13 +343,11 @@ string CondEval (string statement){
 	int isNested = 0;
 	vector<string> operations;
 
-    //000 001 010 100 100 011 110 000
-    // 0   >   2   OR  4   !   6  move
-    // 1   2   3   4   5   6   7   8
-
-    cout << "Statement: " << statement << endl;
+    cout << "Full conditional statement: " << statement << endl;
 	for (int i = 0; i < statement.length()/3; i++){
 		string Cmd = statement.substr(3*i, 3);
+
+        //For nested conditionals
         if (Cmd == "111" && IsCond == false){
 			isNested++;
 		}
@@ -412,6 +358,8 @@ string CondEval (string statement){
                 newCond = "";
             }
 		}
+
+        //For the main conditional statement
 		if (IsCond && isNested == 0){             //if((i+1)%4==1)//Index	if((i+1)%4==2)//comparison op	if((i+1)%4==3)//Value to compare against
 			if((i+1)%4==0){      //Comparison operator between conditions
 				if(Cmd != "100" && Cmd != "101"){//not OR or AND
@@ -432,20 +380,12 @@ string CondEval (string statement){
             }else{//Index, comparison operator, value to compare against
 				condition +=Cmd;
             }
+        //both have safety againgst nested conditionals
 		}else if(isNested != 0){
 			if(Cmd != "111") newCond += Cmd;
         }else{
            if(Cmd != "con") nonCondStatement += Cmd;
         }
-    }
-
-    cout << "isTrue: ";
-    for (bool b : isTrue){
-        cout << b << " ";
-    }
-    cout << endl << "operations: ";
-    for (string s : operations){
-        cout << s << " ";
     }
     vector<bool> newIsTrue = isTrue;
 	if (operations.size()>0){           //–Repeatedly Check/change cont if isTrue[i] is operations[i] with isTrue[i+1] 
@@ -473,11 +413,6 @@ string CondEval (string statement){
 					newIsTrue[0] = false;
 				}
 			}
-            cout << endl << "1st item in newIsTrue: " << newIsTrue[0] << endl;
-        }
-        cout << "Final isTrue size and then content: " << newIsTrue.size() << endl;
-        for (bool b : newIsTrue){
-            cout << b << " ";
         }
         if (newIsTrue[0] == 0){
             nonCondStatement = "";
@@ -496,40 +431,15 @@ string CondEval (string statement){
 string nextCommand(string gonogo, bool isConditionalen){
     string input;
     if(gonogo.length()<2){
-        if(gonogo != "1") cout << "Enter next command: ";
+        cout << "Enter next command: ";
         std::getline(std::cin, input);
     }else{
         input = gonogo;   
     }
 
-    cout << "Input: " << input << endl;
-
     bool end = 0;
     int spec = 0;
 
-    /*
-    So since functions have been added, the next thing is to add conditions and conditionals
-    the part about getting things between 2 commands is the same, but conditionals will be a bit different, 
-    The reason for that is the program currently doesn't have variables or anything like that
-    Also it's somewhat unrelated to use/add conditionals; however, I think I found the reason: it is to check for position, speed, direction, or
-    distance from origin. So the conditionals will be based on those things, and the commands will be based on those things as well. 
-    What I am thinking is that we use indexes for the conditionals. Will the user be able to create new/their own conditionals?
-    They should be, eventually, but for now, the conditionals will be based on the current things that can be checked.
-    As variables can be used to create better loops, right now you can set speed to 1 and move until position is exactly 10 units away from the origin, as a way to
-    crete a loop(you also need to turn to the right direction, but that is not important). 
-
-    We can just use existing infastructure(4 digit input) 1. index, 2. true or false, 3. how many commands to execute(this might push towards functions instead of specOps)
-    If we went that route, the index becomes harder or not possible: con then what?
-    Do we have to mix them?
-    Ok so this is the way to do it: con(0111)000putcon
-    disecting gives:
-    con--initializes both the end and the specCom
-    (0 False
-    111 8th index
-    000 move if false
-    put put if false
-    con--closes cond and specCom
-    */
     string specComs;
     string funcSpec;
     string funcs;
@@ -537,14 +447,10 @@ string nextCommand(string gonogo, bool isConditionalen){
     int nests = 0;
 
     bool isConditional = false;
-    //To make sure the conditional works with functions as well
 
-    //fun 111 (010 110 111) 100 (011 000 101) 001(004e) 000 000 000 fun
-    //fun con  speed>= 7/n  and   direct==90  turnxy90  mov mov mov fun
-
-    //So construct a function exactly the same, but when it is called, a conditional c++ function is called and the conditional is checked,
-    //if true, the actual command part is resent here 
-
+    //This is the main loop that checks the input for commands and executes them
+    //I can just add each character to a vector then check at last
+    //That could be cleaner
     for (size_t ii=0; ii<input.length()/3;ii++){
         string commaned;
         if ((spec == 0 && end == 0) || end == 1){
@@ -572,41 +478,29 @@ string nextCommand(string gonogo, bool isConditionalen){
                 spec = 11;
             }
         }
-        //This creates functions with commands in between "fun" commands
+        //This creates functions with commands in between "fun"s
         //The user inputs another vector with names of functions, uses those names to call the functions
         if (end == 1){//Inside the function
             spec = 0;
             if (commaned == "fun"){//closing the function
                 end=0;
-                functions.push_back(funcs);
                 string nameOfFunc;
                 //can be named as one of the original functions and mess up slightly
                 cout<<"Enter 3 character function name, should be different than the original functions: ";
                 std::getline(std::cin, nameOfFunc);
-                functionen.push_back(nameOfFunc);
+                functionMap[nameOfFunc] = funcs; // Store the function in the map
                 funcs = "";
-                //000111001001101111100011100000con000con011
-                //000 111 001 001 101 111 100 011 100 000 con 000 con 011
-                //mov con  1   >   5  con  4  !=   4  mov end mov end pri
-                //000111001001101111100010100000con000con011
-                //000 111 001 001 101 111 100 010 100 000 con 000 con 011
-                //mov con  1   >   5  con  4   =   4  mov end mov end pri
-                //000111001000101111100011100000con000con011
-                //000 111 001 000 101 111 100 011 100 000 con 000 con 011
-                //mov con  1   <   5  con  4  !=   4  mov end mov end pri
-                //000111001000101111100010100000con000con011
-                //000 111 001 000 101 111 100 010 100 000 con 000 con 011
-                //mov con  1   <   5  con  4   =   4  mov end mov end pri
+                //000)111001(001)101111100(011)100(000)con000con011 //  000 111 001 001 101 111 100 011 100 000 con 000 con 011 //  mov con  1   >   5  con  4  !=   4  mov end mov end pri
             }else if(commaned == "con" && isConditional){//closing the conditional
                 if (nests-1 ==0){
                     end=0;
                     isConditional = false;
+                    //If the conditional is not called
                     if (isConditionalen != true){
                         string nameOfFunc;
                         cout<<"Enter 3 character conditional name, should be different than the original functions: ";
                         std::getline(std::cin, nameOfFunc);
-                        functionen.push_back(nameOfFunc);
-                        functions.push_back("111" + funcs + "con");
+                        functionMap[nameOfFunc] = "111" + funcs + "con"; // Store the conditional in the map
                     }
                     nextCommand(CondEval(funcs), false);
                     funcs = "";
@@ -620,21 +514,20 @@ string nextCommand(string gonogo, bool isConditionalen){
                 funcs += commaned;    
             }
         }else{//not inside function
-            cout << "Command: " << commaned << endl << input << "  " << ii << "  " <<  input.substr(ii*3, 3) << endl;
+            //I think you should check normal functions first, then if it returns false, check for special functions
             if(commaned == "111"){
                 end= 1;
                 nests += 1;
                 isConditional = true;
-                cout << ii << endl;
             }else if(commaned == "fun"){//opening the function
                 end = 1;
             }else{//calling a function/plain
                 size_t iters = 0;
                 bool found = false;
-                for (string funky: functionen){//Calling a new function
-                    if (commaned == funky){
+                for (const auto& pair: functionMap){//Calling a new function
+                    if (commaned == pair.first){
                         found = true;
-                        string fullCommand= functions[iters];
+                        string fullCommand= pair.second;
                         nextCommand(fullCommand, true);
                         //executes the new function
                         break;
@@ -668,9 +561,9 @@ string checkCommand(string cmd){
         autoGetBall();
     }
     if (cmd == "cmd"){
-        cout << "current functions:  ";
-        for (string funky : functionen){
-            cout << funky<<" , ";    
+        cout << "Current functions:  ";
+        for (const auto& pair: functionMap){
+            cout << pair.first<<" ; ";    
         }
         cout << endl;
     }
@@ -689,7 +582,6 @@ int main()
     giveInfo();
     string line;
     while (true){
-        cout << "Enter next command: ";
         line = nextCommand("1", false);
     }
     return 0;
