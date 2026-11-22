@@ -392,7 +392,7 @@ string CondEval (string statement){
 	string condition = "";
 	string newCond = "";
 	vector<bool> isTrue;
-	bool isNested = false;
+	int isNested = 0;
 	vector<string> operations;
 
     //000 001 010 100 100 011 110 000
@@ -402,17 +402,24 @@ string CondEval (string statement){
     cout << "Statement: " << statement << endl;
 	for (int i = 0; i < statement.length()/3; i++){
 		string Cmd = statement.substr(3*i, 3);
-		if (Cmd == "111" && IsCond == false){
-			isNested=true;
+        if (Cmd == "111" && IsCond == false){
+			isNested++;
 		}
-		if (Cmd == "con" && isNested == true){
-            isNested=false;//make it an int
-			nonCondStatement += CondEval(newCond);
+		if (Cmd == "con"){
+            isNested--;//make it an int
+            if (isNested == 0) {
+                nonCondStatement += CondEval(newCond);
+                newCond = "";
+            }
 		}
-		if (IsCond && !isNested){             //if((i+1)%4==1)//Index	if((i+1)%4==2)//comparison op	if((i+1)%4==3)//Value to compare against
-			if((i+1)%4==0){      //Comparison opearot between conditions
+		if (IsCond && isNested == 0){             //if((i+1)%4==1)//Index	if((i+1)%4==2)//comparison op	if((i+1)%4==3)//Value to compare against
+			if((i+1)%4==0){      //Comparison operator between conditions
 				if(Cmd != "100" && Cmd != "101"){//not OR or AND
-                    nonCondStatement += Cmd;
+                    if(Cmd != "111") {//fixes a problem where the nested conditional is right after the condition of the parent conditional
+                        nonCondStatement += Cmd;
+                    }else{
+                        isNested++;
+                    }
 					isTrue.push_back(checkCond(condition));
 					condition = "";
                     IsCond=false;//end of conditional statement
@@ -425,10 +432,10 @@ string CondEval (string statement){
             }else{//Index, comparison operator, value to compare against
 				condition +=Cmd;
             }
-		}else if(isNested){
-			newCond += Cmd;
+		}else if(isNested != 0){
+			if(Cmd != "111") newCond += Cmd;
         }else{
-            nonCondStatement += Cmd;
+           if(Cmd != "con") nonCondStatement += Cmd;
         }
     }
 
@@ -443,7 +450,6 @@ string CondEval (string statement){
     vector<bool> newIsTrue = isTrue;
 	if (operations.size()>0){           //–Repeatedly Check/change cont if isTrue[i] is operations[i] with isTrue[i+1] 
 		vector<string> newOperations = operations;
-		//int index=0;
 		while (newIsTrue.size() != 1){
             cout << "iteration" << endl;
 			bool second= newIsTrue[1];
@@ -468,20 +474,20 @@ string CondEval (string statement){
 				}
 			}
             cout << endl << "1st item in newIsTrue: " << newIsTrue[0] << endl;
-            //index++;
         }
         cout << "Final isTrue size and then content: " << newIsTrue.size() << endl;
         for (bool b : newIsTrue){
             cout << b << " ";
         }
-        if (newIsTrue[0] == 1){
-            cout << endl << "nonCondStatement: " << nonCondStatement << endl;
-            return nonCondStatement;
-        }else{
-            cout << endl << "nonCondStatement: " << "nothing" << endl;
-            return "";
+        if (newIsTrue[0] == 0){
+            nonCondStatement = "";
         }
+        cout << endl << "nonCondStatement: " << nonCondStatement << endl;
+        return nonCondStatement;
 	}else{
+        if(isTrue[0] == 0){
+            nonCondStatement = "";
+        }
         cout << endl << "nonCondStatement: " << nonCondStatement << endl;
         return nonCondStatement;
     }
@@ -490,6 +496,7 @@ string CondEval (string statement){
 string nextCommand(string gonogo, bool isConditionalen){
     string input;
     if(gonogo.length()<2){
+        if(gonogo != "1") cout << "Enter next command: ";
         std::getline(std::cin, input);
     }else{
         input = gonogo;   
@@ -578,6 +585,18 @@ string nextCommand(string gonogo, bool isConditionalen){
                 std::getline(std::cin, nameOfFunc);
                 functionen.push_back(nameOfFunc);
                 funcs = "";
+                //000111001001101111100011100000con000con011
+                //000 111 001 001 101 111 100 011 100 000 con 000 con 011
+                //mov con  1   >   5  con  4  !=   4  mov end mov end pri
+                //000111001001101111100010100000con000con011
+                //000 111 001 001 101 111 100 010 100 000 con 000 con 011
+                //mov con  1   >   5  con  4   =   4  mov end mov end pri
+                //000111001000101111100011100000con000con011
+                //000 111 001 000 101 111 100 011 100 000 con 000 con 011
+                //mov con  1   <   5  con  4  !=   4  mov end mov end pri
+                //000111001000101111100010100000con000con011
+                //000 111 001 000 101 111 100 010 100 000 con 000 con 011
+                //mov con  1   <   5  con  4   =   4  mov end mov end pri
             }else if(commaned == "con" && isConditional){//closing the conditional
                 if (nests-1 ==0){
                     end=0;
@@ -591,7 +610,9 @@ string nextCommand(string gonogo, bool isConditionalen){
                     }
                     nextCommand(CondEval(funcs), false);
                     funcs = "";
+                    nests = 0;
                 }else{
+                    funcs += commaned;
                     nests -= 1;
                 }
             }else{//lines of the function
@@ -604,6 +625,7 @@ string nextCommand(string gonogo, bool isConditionalen){
                 end= 1;
                 nests += 1;
                 isConditional = true;
+                cout << ii << endl;
             }else if(commaned == "fun"){//opening the function
                 end = 1;
             }else{//calling a function/plain
