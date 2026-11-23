@@ -11,7 +11,7 @@ using std::vector;
 using std::array;
 using std::cout;
 using std::string;
-using std::endl;
+using std::'\n';
 
 // A position always has exactly three coordinates. std::array stores its
 // elements directly (unlike vector, it cannot grow or shrink), so it suits
@@ -94,11 +94,11 @@ float getBall(){
     // closest-ball search, and the vector is not searched again for its index.
     const ClosestBallInfo closestBall = getClosestBallInfo();
     const float distance = closestBall[DISTANCE_INDEX];
-    cout << "Distance to ball: " << distance << endl;
+    cout << "Distance to ball: " << distance << '\n';
     // A negative distance is the "no ball" sentinel. Check it before using
     // the returned index, because an empty vector has no valid element to erase.
     if (distance >= 0 && distance <= 5){
-        cout << " Got Ball"<<endl;
+        cout << " Got Ball"<<'\n';
         // The lookup stores the vector index as a float to fit the all-float
         // result array; convert it back before using it to index the vector.
         const size_t ballIndex = static_cast<size_t>(closestBall[BALL_INDEX]);
@@ -113,7 +113,7 @@ float autoGetBall(){
     // The lookup returns a negative distance when balls is empty. Returning
     // here prevents using missing offsets or dividing by an invalid distance.
     if (closestBall[DISTANCE_INDEX] < 0){
-        cout << "No balls available to collect." << endl;
+        cout << "No balls available to collect." << '\n';
         return -1;
     }
 
@@ -122,7 +122,7 @@ float autoGetBall(){
     std::getline(std::cin,line);
     const int steps = stoi(line);
     if (steps <= 0){
-        cout << "Step count must be > 0" << endl;
+        cout << "Step count must be > 0" << '\n';
         return -1;
     }
     
@@ -134,18 +134,18 @@ float autoGetBall(){
     // If all offsets are zero, the player is already at the target. Avoid
     // dividing by this zero length while calculating the turn angle.
     if (hypotenuse == 0){
-        cout << "Already at the closest ball." << endl;
+        cout << "Already at the closest ball." << '\n';
         return 0;
     }
     
     const float requiredSpeed = hypotenuse/steps;
     int requiredTurn;
     
-    cout << endl << "Dy, Dx, Dz " << deltaY << ", " << deltaX << ", " << deltaZ;
+    cout << '\n' << "Dy, Dx, Dz " << deltaY << ", " << deltaX << ", " << deltaZ;
     
     if (deltaY<0){//
         int degree = std::asin(-deltaY/hypotenuse)*180/PI;
-        cout << endl <<"degree: "<<degree<<"  ";
+        cout << '\n' <<"degree: "<<degree<<"  ";
         if (deltaX<0){//-dx -dy
             int targetDirection = 180+degree;
             requiredTurn = targetDirection-xydirection;
@@ -163,7 +163,7 @@ float autoGetBall(){
         }
     }   
     if (hypotenuse !=-1){
-        cout << endl << "To get to the closest ball, set speed to " << requiredSpeed << " and turn " << requiredTurn<<" 'it's "<<requiredTurn/19<<endl;
+        cout << '\n' << "To get to the closest ball, set speed to " << requiredSpeed << " and turn " << requiredTurn<<" 'it's "<<requiredTurn/19<<'\n';
     }
     return requiredTurn;
 }
@@ -216,15 +216,15 @@ void move(){
     float t3 = position[2]+round(100.0*zM)/100.0;
     if (std::abs(t1)>= radius){
         t1 = radius*t1/std::abs(t1)-0.01f;
-        cout <<endl<< "Caution: Hit Wall X"<<endl<<endl;
+        cout <<'\n'<< "Caution: Hit Wall X"<<'\n'<<'\n';
     }
     if (std::abs(t2)>=radius){
         t2 = radius*t2/std::abs(t2)-0.01f;
-        cout <<endl<<"Caution: Hit Wall Y"<<endl<<endl;
+        cout <<'\n'<<"Caution: Hit Wall Y"<<'\n'<<'\n';
     }
     if (std::abs(t3)>=radius){
         t3 = radius*t3/std::abs(t3)-0.01f;
-        cout <<endl<<"Caution: Hit Wall Z"<<endl<<endl;
+        cout <<'\n'<<"Caution: Hit Wall Z"<<'\n'<<'\n';
         
     }
     position[0] = t1;
@@ -278,16 +278,16 @@ void setSpeed(string newSpeed){
     int num = normalMovement;
     num = convFromBinary(newSpeed);
     normalMovement = num;
-    cout << "Set speed to " << normalMovement << endl;
+    cout << "Set speed to " << normalMovement << '\n';
 }
 
 float getDistance();
 
 void giveInfo(){
-    cout << endl << "You are at: "<<position[0]<<", "<<position[1]<<", "<<position[2]<< endl<< "with a x/y-direction: "<< xydirection<< " Degrees"<< endl<< "with a x/z-direction: "<< xzdirection<< " Degrees"<< endl << "Speed: " << normalMovement<< endl << "Distance from origin: " << 0.01*round(100*getDistance());
+    cout << '\n' << "You are at: "<<position[0]<<", "<<position[1]<<", "<<position[2]<< '\n'<< "with a x/y-direction: "<< xydirection<< " Degrees"<< '\n'<< "with a x/z-direction: "<< xzdirection<< " Degrees"<< '\n' << "Speed: " << normalMovement<< '\n' << "Distance from origin: " << 0.01*round(100*getDistance());
     // This display only needs the distance, so it reads that field from the
     // same result type used by getBall and autoGetBall.
-    cout << endl << "Distance to closest Ball: " << getClosestBallInfo()[DISTANCE_INDEX]<<endl<<"Number of balls: "<<balls.size()<<endl<< endl;
+    cout << '\n' << "Distance to closest Ball: " << getClosestBallInfo()[DISTANCE_INDEX]<<'\n'<<"Number of balls: "<<balls.size()<<'\n'<< '\n';
 }
 string checkCommand(string cmd);
 float getDistance(){
@@ -328,7 +328,7 @@ bool checkCond (string cond){
 	const int comparison = convFromBinary(cond.substr(3, 3));
 	const int value = convFromBinary(cond.substr(6, 3));
 
-    cout <<  Index << "  "<< comparison << "  "<< value << endl;
+    cout <<  Index << "  "<< comparison << "  "<< value << '\n';
     bool comps[] = {Index < value, Index > value, Index == value, Index != value};
 
 	return comps[comparison];
@@ -343,7 +343,7 @@ string CondEval (string statement){
 	int isNested = 0;
 	vector<string> operations;
 
-    cout << "Full conditional statement: " << statement << endl;
+    cout << "Full conditional statement: " << statement << '\n';
 	for (int i = 0; i < statement.length()/3; i++){
 		string Cmd = statement.substr(3*i, 3);
 
@@ -391,14 +391,14 @@ string CondEval (string statement){
 	if (operations.size()>0){           //–Repeatedly Check/change cont if isTrue[i] is operations[i] with isTrue[i+1] 
 		vector<string> newOperations = operations;
 		while (newIsTrue.size() != 1){
-            cout << "iteration" << endl;
+            cout << "iteration" << '\n';
 			bool second= newIsTrue[1];
 			string oper = newOperations[0];
             newIsTrue[1] = newIsTrue.back();
             newIsTrue.pop_back();
             newOperations[0] = newOperations.back();
             newOperations.pop_back();
-            cout << newIsTrue[0] << "  " << oper << "  " << second << endl;
+            cout << newIsTrue[0] << "  " << oper << "  " << second << '\n';
 			if (oper=="100"){
 				if(newIsTrue[0]==1 || second==1){
 					newIsTrue[0] = true;	
@@ -417,13 +417,13 @@ string CondEval (string statement){
         if (newIsTrue[0] == 0){
             nonCondStatement = "";
         }
-        cout << endl << "nonCondStatement: " << nonCondStatement << endl;
+        cout << '\n' << "nonCondStatement: " << nonCondStatement << '\n';
         return nonCondStatement;
 	}else{
         if(isTrue[0] == 0){
             nonCondStatement = "";
         }
-        cout << endl << "nonCondStatement: " << nonCondStatement << endl;
+        cout << '\n' << "nonCondStatement: " << nonCondStatement << '\n';
         return nonCondStatement;
     }
 }
@@ -565,7 +565,7 @@ string checkCommand(string cmd){
         for (const auto& pair: functionMap){
             cout << pair.first<<" ; ";    
         }
-        cout << endl;
+        cout << '\n';
     }
     if (cmd == "111" && lastCommand!="111"){
         checkCommand(lastCommand);
@@ -577,8 +577,8 @@ string checkCommand(string cmd){
 //0 1 2 3 4 5 6 7 8
 int main()
 {
-    cout << "Instructions:"<<endl<< "000 to move"<< endl<<"001 to turn--include 4 digit base-19 input between any 2 characters"<<endl<<"010 to set speed--include 4 digit binary input between any 2 characters"<<endl<<"011 to display current status"<< endl<< "100 to get ball"<<endl<<"101 to place ball"<<endl<< "110 to auto get ball"<<endl<<endl<< "Turning is a 4 digit nonadecimal or base-19 code. The first 2 digits are turning in the xz plane,\n the second 2 digits are for turning in the xy plane A(10) B C D E F G H I(18)"<<endl<<endl<< "Use ..fun.. to create a command then enter the name for the command.\nReminder: don't call the command you created in the command\n";
-    cout << "First 2 digits for turning are for the xz direction, the next two are for xy direction:\n 90 degrees is 4E, 180 is 99, 270 is E4, 360 is II(max 19^2-1)"<<endl<<endl<< "For conditionals, use 111 to start and con to end the conditional, and use 3 digit binary inputs for the index, comparison operator, and value to compare against\nThe comparison operators are: < is 000, > is 001, == is 010, != is 011"<<endl<<"NEVER USE 111 unless for conditionals as you need to have equal numbers of 111 and con"<<endl;
+    cout << "Instructions:"<<'\n'<< "000 to move"<< '\n'<<"001 to turn--include 4 digit base-19 input between any 2 characters"<<'\n'<<"010 to set speed--include 4 digit binary input between any 2 characters"<<'\n'<<"011 to display current status"<< '\n'<< "100 to get ball"<<'\n'<<"101 to place ball"<<'\n'<< "110 to auto get ball"<<'\n'<<'\n'<< "Turning is a 4 digit nonadecimal or base-19 code. The first 2 digits are turning in the xz plane,\n the second 2 digits are for turning in the xy plane A(10) B C D E F G H I(18)"<<'\n'<<'\n'<< "Use ..fun.. to create a command then enter the name for the command.\nReminder: don't call the command you created in the command\n";
+    cout << "First 2 digits for turning are for the xz direction, the next two are for xy direction:\n 90 degrees is 4E, 180 is 99, 270 is E4, 360 is II(max 19^2-1)"<<'\n'<<'\n'<< "For conditionals, use 111 to start and con to end the conditional, and use 3 digit binary inputs for the index, comparison operator, and value to compare against\nThe comparison operators are: < is 000, > is 001, == is 010, != is 011"<<'\n'<<"NEVER USE 111 unless for conditionals as you need to have equal numbers of 111 and con"<<'\n';
     giveInfo();
     string line;
     while (true){
