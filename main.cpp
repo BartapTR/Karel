@@ -604,7 +604,7 @@ string nextCommand(string gonogo, bool isConditionalen){
     return input;
 }
 
-string commandEvaluation (string input, bool nameAble) {
+string commandEvaluation (string input) {//, bool nameAble
 
     string text;
     if(input.length()<2){
@@ -625,8 +625,46 @@ string commandEvaluation (string input, bool nameAble) {
 
     //Have a list of commands at this point
 
+    std::unordered_map<string, int> evalMap = 
+    {
+    {"Para", 0}, {"Nests", 0}, {"ParaFor", 0}, {"Formatting", 0}, {"howManyMore", 0}, {"whatIsExpected", 0}
+    //mainPara   for condition  func/condit     ignore 1st/2nd      setspeed or turn    format, value paranthesis
+    };
+    // evalMap.contains("");
+
+    string MainParaStatement = "";
+
     for (string cmd: words) {
-        cout << cmd << endl;
+        if (cmd.length() != 8) continue;
+        int code = convFromBinary(cmd);
+        //first check normal commands, about 10 of them also means evalmap is
+        if (evalMap["ParaFor"] == 7) {//If it's a function just add to main statement
+            if (code == 10) {//closing a paranthesis
+                evalMap["Para"]--;
+                if(evalMap["Para"] == 0){
+                    //save function
+                }
+            }
+            MainParaStatement += cmd;
+        }else{
+            cmd = checkCommand(cmd);
+            if (cmd == "0") {
+                evalMap["Para"]++;
+                evalMap["ParaFor"] = 1;
+            }else if (cmd == "1") {
+                evalMap["Para"]++;
+                evalMap["Nests"]++;
+            }else if (cmd == "2") {
+                evalMap["Para"]++;
+                evalMap["Nests"]++;
+                evalMap["ParaFor"] = 1;
+            }else if (cmd == "3") {
+                evalMap["Para"]++;
+                evalMap["Nests"]++;
+                evalMap["ParaFor"] = 1;
+            }
+        }
+        //if not a regular command, break it down and run
     }
 
     return input;
@@ -670,7 +708,7 @@ int main()
     cout << "First 2 digits for turning are for the xz direction, the next two are for xy direction:\n 90 degrees is 4E, 180 is 99, 270 is E4, 360 is II(max 19^2-1)"<<'\n'<<'\n'<< "For conditionals, use 111 to start and con to end the conditional, and use 3 digit binary inputs for the index, comparison operator, and value to compare against\nThe comparison operators are: < is 000, > is 001, == is 010, != is 011"<<'\n'<<"NEVER USE 111 unless for conditionals as you need to have equal numbers of 111 and con"<<'\n';
     giveInfo();
     while (true){
-        commandEvaluation("1", false);
+        commandEvaluation("1");
     }
     return 0;
 }
