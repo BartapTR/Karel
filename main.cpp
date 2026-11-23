@@ -11,7 +11,7 @@ using std::vector;
 using std::array;
 using std::cout;
 using std::string;
-using std::'\n';
+using std::endl;
 
 // A position always has exactly three coordinates. std::array stores its
 // elements directly (unlike vector, it cannot grow or shrink), so it suits
