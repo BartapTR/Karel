@@ -6,12 +6,72 @@
 #include <cctype>
 #include <algorithm>
 #include <unordered_map>
+#include <sstream>
 
 using std::vector;
 using std::array;
 using std::cout;
 using std::string;
 using std::endl;
+
+/*
+#4-bit or 8-bit?
+I think I'll do 8-bit
+As eventually I want to have a lot of commands, and 8-bit is 256 commands, which is a lot more than 16, which could suggest something in-between, though.
+Gives more flexibility and feels more standard, number inputs will be standard, so 4-bit is a bit too small.
+*/
+
+/*
+most functions don't require inputs
+binary conversion is tolerant for larger digits
+but what about turning?
+0000 0001 004e 4e01
+turn cmmd { 90 90 }
+where the 00 and 01 are () or [] or even {}, I didn't forget about /\, either.
+This does mean speed and turn have different formats
+should we have a command for saying what the next command's structure would be like?
+*/
+
+/*
+As the comments above suggest, we need a new list of instructions:
+0000 0000-move
+0000 0001-turn
+0000 0010-set speed
+0000 0011-display
+0000 0100-get ball
+0000 0101-put ball
+0000 0110-auto get ball
+0000 0111-function
+0000 1000-conditional
+0000 1001-open
+0000 1010-close
+0000 1011-ignore 2nd
+0000 1100-full
+0000 1101-commands
+0000 1110-
+0000 1111-
+*/
+
+/*
+The above comments suggest separating 4 digits, which means to use cin instead of getline, also as the program should be fault-tolerant, we should be okay
+I need to remove several sections to start implementing this
+
+Should it be add 4 bits to a list
+add 8 bits to a list
+evaluate 8 bits in a loop
+
+The thing is with more commands, it's possible to function with less checks
+but a separate function for evaluating simple commands would be more complex:
+you need to have the full, relevan statement in hand to correcty evaluate the commands
+
+So just use the existing infrastructure
+
+But then what about 8 bit vs 4 bit input collection
+Here are two examples for understanding both ways
+0000 0000 0000 0001 0000 1011 004e 4e00 0000 0011
+00000000 00000001 00001011 004e4e00 00000011
+Now it seems that 8-bit input for 8-bit evauation is better as if you only use basic commands it looks cleaner, easier to count
+*/
 
 // A position always has exactly three coordinates. std::array stores its
 // elements directly (unlike vector, it cannot grow or shrink), so it suits
@@ -543,6 +603,35 @@ string nextCommand(string gonogo, bool isConditionalen){
     }
     return input;
 }
+
+string commandEvaluation (string input, bool nameAble) {
+
+    string text;
+    if(input.length()<2){
+        cout << "Enter next command: ";
+        std::getline(std::cin, text);
+    }else{
+        text = input;   
+    }
+
+    std::stringstream ss(text);
+    string word;
+    vector<string> words;
+
+    // The >> operator automatically skips consecutive whitespace
+    while (ss >> word) {
+        words.push_back(word);
+    }
+
+    //Have a list of commands at this point
+
+    for (string cmd: words) {
+        cout << cmd << endl;
+    }
+
+    return input;
+}
+
 string checkCommand(string cmd){
     string input = "";
     if (cmd == "000"){
@@ -580,9 +669,8 @@ int main()
     cout << "Instructions:"<<'\n'<< "000 to move"<< '\n'<<"001 to turn--include 4 digit base-19 input between any 2 characters"<<'\n'<<"010 to set speed--include 4 digit binary input between any 2 characters"<<'\n'<<"011 to display current status"<< '\n'<< "100 to get ball"<<'\n'<<"101 to place ball"<<'\n'<< "110 to auto get ball"<<'\n'<<'\n'<< "Turning is a 4 digit nonadecimal or base-19 code. The first 2 digits are turning in the xz plane,\n the second 2 digits are for turning in the xy plane A(10) B C D E F G H I(18)"<<'\n'<<'\n'<< "Use ..fun.. to create a command then enter the name for the command.\nReminder: don't call the command you created in the command\n";
     cout << "First 2 digits for turning are for the xz direction, the next two are for xy direction:\n 90 degrees is 4E, 180 is 99, 270 is E4, 360 is II(max 19^2-1)"<<'\n'<<'\n'<< "For conditionals, use 111 to start and con to end the conditional, and use 3 digit binary inputs for the index, comparison operator, and value to compare against\nThe comparison operators are: < is 000, > is 001, == is 010, != is 011"<<'\n'<<"NEVER USE 111 unless for conditionals as you need to have equal numbers of 111 and con"<<'\n';
     giveInfo();
-    string line;
     while (true){
-        line = nextCommand("1", false);
+        commandEvaluation("1", false);
     }
     return 0;
 }
