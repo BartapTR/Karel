@@ -34,22 +34,22 @@ should we have a command for saying what the next command's structure would be l
 
 /*
 As the comments above suggest, we need a new list of instructions:
-0000 0000-move
-0000 0001-turn
-0000 0010-set speed
-0000 0011-display
-0000 0100-get ball
-0000 0101-put ball
-0000 0110-auto get ball
-0000 0111-function
-0000 1000-conditional
-0000 1001-open
-0000 1010-close
-0000 1011-ignore 2nd
-0000 1100-full
-0000 1101-commands
-0000 1110-
-0000 1111-
+0000 0000-move          0
+1000 0001-turn          129
+1000 0010-set speed     130
+0000 0011-display       3
+0000 0100-get ball      4
+0000 0101-put ball      5
+0000 0110-auto get ball 6
+1000 0111-function      135
+1000 1000-conditional   136
+0000 1001-open          9
+0000 1010-close         10
+0000 1011-ignore 2nd    11
+0000 1100-full          12
+0000 1101-commands      13
+0000 1110-              14
+0000 1111-              15
 */
 
 /*
@@ -72,6 +72,9 @@ Here are two examples for understanding both ways
 00000000 00000001 00001011 004e4e00 00000011
 Now it seems that 8-bit input for 8-bit evauation is better as if you only use basic commands it looks cleaner, easier to count
 */
+
+//If you use paranthesis for functions with parameters, you allow larger inputs, if not you make it much more simpler for basic speed setting and turning
+
 
 // A position always has exactly three coordinates. std::array stores its
 // elements directly (unlike vector, it cannot grow or shrink), so it suits
@@ -620,7 +623,13 @@ string commandEvaluation (string input) {//, bool nameAble
 
     // The >> operator automatically skips consecutive whitespace
     while (ss >> word) {
-        words.push_back(word);
+        //word.lenght()/8 allows 16 bit input to be 2 commands instead of being ignored
+        size_t wL = word.length()/8;
+        for (size_t n = 0 ; n < wL ; n++) {
+            string worde = word.substr(8*n,8);
+            cout << endl << "cmd " << worde;
+            words.push_back(worde);
+        }
     }
 
     //Have a list of commands at this point
@@ -628,53 +637,55 @@ string commandEvaluation (string input) {//, bool nameAble
     std::unordered_map<string, int> evalMap = 
     {
     {"Para", 0}, {"Nests", 0}, {"ParaFor", 0}, {"Formatting", 0}, {"howManyMore", 0}, {"whatIsExpected", 0}
-    //mainPara   for condition  func/condit     ignore 1st/2nd      setspeed or turn    format, value paranthesis
+    //mainPara   for condition  func/condition  ignore 1st/2nd      setspeed or turn    format, value paranthesis
     };
     // evalMap.contains("");
 
     string MainParaStatement = "";
 
     for (string cmd: words) {
-        if (cmd.length() != 8) continue;
+        if (cmd.length() != 8) continue;//might be redundant
         int code = convFromBinary(cmd);
         //first check normal commands, about 10 of them also means evalmap is
 
-        if (evalMap["ParaFor"] == 7) {//If it's a function just add to main statement
-            if (code == 10) {//closing a paranthesis
-                evalMap["Para"]--;
-                if(evalMap["Para"] == 0){
-                    evalMap["ParaFor"] = 0;
-                    string nameOfFunc;
-                    //can be named as one of the original functions and mess up slightly
-                    cout<<"Enter 8-bit function code, should be different than the original functions: ";
-                    std::getline(std::cin, nameOfFunc);
-                    functionMap[nameOfFunc] = MainParaStatement; // Store the function in the map
-                    MainParaStatement = "";
-                }
+        if (code == 10) evalMap["Para"]--;
+        if (code == 9) evalMap["Para"]++;
+
+        cout << "Main: " << MainParaStatement << ".  " << code << "  " << evalMap["Para"] << "  " << evalMap["Nests"] << "  " << evalMap["ParaFor"] << "  " << evalMap["Formatting"] << "  " << evalMap["howManyMore"] << "  " << evalMap["whatIsExpected"] << endl;
+
+        if(evalMap["Para"] == 0){
+            if (evalMap["ParaFor"] == 135) {//If it's a function just add to main statement
+                evalMap["ParaFor"] = 0;
+                string nameOfFunc;
+                //can be named as one of the original functions and mess up slightly
+                cout<<"Enter 8-bit function code, should be different than the original functions: ";
+                std::getline(std::cin, nameOfFunc);
+                functionMap[nameOfFunc] = MainParaStatement; // Store the function in the map
+                cout << "Main" << MainParaStatement << endl;
+                MainParaStatement = "";
+            }else if (evalMap["ParaFor"] == 136) {//conditional is the main thing
+                evalMap["ParaFor"] = 0;
+                string nameOfFunc;
+                //can be named as one of the original functions and mess up slightly
+                cout<<"Enter 8-bit conditional code, should be different than the original functions: ";
+                std::getline(std::cin, nameOfFunc);
+                functionMap[nameOfFunc] = MainParaStatement; // Store the function in the map
+                MainParaStatement = "";
             }
-            MainParaStatement += cmd;
-        }else if (evalMap["ParaFor"] == 8) {//conditional is the main thing
-            if (code == 10) {//closing a paranthesis
-                evalMap["Para"]--;
-                if(evalMap["Para"] == 0){
-                    evalMap["ParaFor"] = 0;
-                    string nameOfFunc;
-                    //can be named as one of the original functions and mess up slightly
-                    cout<<"Enter 8-bit conditional code, should be different than the original functions: ";
-                    std::getline(std::cin, nameOfFunc);
-                    functionMap[nameOfFunc] = MainParaStatement; // Store the function in the map
-                    MainParaStatement = "";
-                }
-            }
-            MainParaStatement += cmd;
-        }else if (evalMap["ParaFor"] != 0) {//speed, turn, or other function that requires a parameter
+        }else{
+            if (code != 9 && code != 10) MainParaStatement += cmd;
+        }
+
+        if (evalMap["ParaFor"] != 0 && evalMap["ParaFor"] != 135  && evalMap["ParaFor"] != 136) {//speed, turn, or other function that requires a parameter
             //function paranthesis value paranthesis
             if (evalMap["whatIsExpected"] == 2){
                 evalMap["whatIsExpected"] = 0;//reset after actual value
                 cout << "Main statement: " << MainParaStatement << endl;
-                if (evalMap["ParaFor"] == 1){
+                if (evalMap["ParaFor"] == 129){
+                    MainParaStatement = MainParaStatement.substr(2, 4);
+                    cout << endl << MainParaStatement << endl;
                     turn(MainParaStatement);
-                }if (evalMap["ParaFor"] == 2){
+                }if (evalMap["ParaFor"] == 130){
                     setSpeed(MainParaStatement);
                 }
                 evalMap["ParaFor"] = 0;
@@ -682,19 +693,23 @@ string commandEvaluation (string input) {//, bool nameAble
                 MainParaStatement = cmd;//set value 2 times but only the actual value is registered
                 evalMap["whatIsExpected"] ++;
             }
-        }else{
-            if (checkCommand(cmd) == false){
-                evalMap["ParaFor"] = code;
+        }else if(evalMap["ParaFor"] == 0){
+            if (checkCommand(cmd) == false){//Execute regular command, else check whether it's a user-function (that requires paramaters)
+                if(cmd[0] == '1') evalMap["ParaFor"] = code;// bit checking for parameter requirement
+                
+                if(functionMap.contains(cmd)){
+                    cout << functionMap[cmd];    
+                    commandEvaluation(functionMap[cmd]);
+                }
             }
         }
-        //if not a regular command, break it down and run
     }
 
     return input;
 }
 
 bool checkCommand(string cmd){
-    bool output;
+    bool output = false;
     if (cmd == "00000000"){
         output = true;
         move();    
