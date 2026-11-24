@@ -276,15 +276,15 @@ void move(){
     float t3 = position[2]+round(100.0*zM)/100.0;
     if (std::abs(t1)>= radius){
         t1 = radius*t1/std::abs(t1)-0.01f;
-        cout <<'\n'<< "Caution: Hit Wall X"<<'\n'<<'\n';
+        cout <<'\n'<< "Caution: Hit Wall X"<< "\n\n";
     }
     if (std::abs(t2)>=radius){
         t2 = radius*t2/std::abs(t2)-0.01f;
-        cout <<'\n'<<"Caution: Hit Wall Y"<<'\n'<<'\n';
+        cout <<'\n'<<"Caution: Hit Wall Y"<< "\n\n";
     }
     if (std::abs(t3)>=radius){
         t3 = radius*t3/std::abs(t3)-0.01f;
-        cout <<'\n'<<"Caution: Hit Wall Z"<<'\n'<<'\n';
+        cout <<'\n'<<"Caution: Hit Wall Z"<< "\n\n";
         
     }
     position[0] = t1;
@@ -349,7 +349,7 @@ void giveInfo(){
     // same result type used by getBall and autoGetBall.
     cout << '\n' << "Distance to closest Ball: " << getClosestBallInfo()[DISTANCE_INDEX]<<'\n'<<"Number of balls: "<<balls.size()<<'\n'<< '\n';
 }
-string checkCommand(string cmd);
+bool checkCommand(string cmd);
 float getDistance(){
     float n1 = position[0];
     float n2 = position[1];
@@ -638,30 +638,53 @@ string commandEvaluation (string input) {//, bool nameAble
         if (cmd.length() != 8) continue;
         int code = convFromBinary(cmd);
         //first check normal commands, about 10 of them also means evalmap is
+
         if (evalMap["ParaFor"] == 7) {//If it's a function just add to main statement
             if (code == 10) {//closing a paranthesis
                 evalMap["Para"]--;
                 if(evalMap["Para"] == 0){
-                    //save function
+                    evalMap["ParaFor"] = 0;
+                    string nameOfFunc;
+                    //can be named as one of the original functions and mess up slightly
+                    cout<<"Enter 8-bit function code, should be different than the original functions: ";
+                    std::getline(std::cin, nameOfFunc);
+                    functionMap[nameOfFunc] = MainParaStatement; // Store the function in the map
+                    MainParaStatement = "";
                 }
             }
             MainParaStatement += cmd;
+        }else if (evalMap["ParaFor"] == 8) {//conditional is the main thing
+            if (code == 10) {//closing a paranthesis
+                evalMap["Para"]--;
+                if(evalMap["Para"] == 0){
+                    evalMap["ParaFor"] = 0;
+                    string nameOfFunc;
+                    //can be named as one of the original functions and mess up slightly
+                    cout<<"Enter 8-bit conditional code, should be different than the original functions: ";
+                    std::getline(std::cin, nameOfFunc);
+                    functionMap[nameOfFunc] = MainParaStatement; // Store the function in the map
+                    MainParaStatement = "";
+                }
+            }
+            MainParaStatement += cmd;
+        }else if (evalMap["ParaFor"] != 0) {//speed, turn, or other function that requires a parameter
+            //function paranthesis value paranthesis
+            if (evalMap["whatIsExpected"] == 2){
+                evalMap["whatIsExpected"] = 0;//reset after actual value
+                cout << "Main statement: " << MainParaStatement << endl;
+                if (evalMap["ParaFor"] == 1){
+                    turn(MainParaStatement);
+                }if (evalMap["ParaFor"] == 2){
+                    setSpeed(MainParaStatement);
+                }
+                evalMap["ParaFor"] = 0;
+            }else{
+                MainParaStatement = cmd;//set value 2 times but only the actual value is registered
+                evalMap["whatIsExpected"] ++;
+            }
         }else{
-            cmd = checkCommand(cmd);
-            if (cmd == "0") {
-                evalMap["Para"]++;
-                evalMap["ParaFor"] = 1;
-            }else if (cmd == "1") {
-                evalMap["Para"]++;
-                evalMap["Nests"]++;
-            }else if (cmd == "2") {
-                evalMap["Para"]++;
-                evalMap["Nests"]++;
-                evalMap["ParaFor"] = 1;
-            }else if (cmd == "3") {
-                evalMap["Para"]++;
-                evalMap["Nests"]++;
-                evalMap["ParaFor"] = 1;
+            if (checkCommand(cmd) == false){
+                evalMap["ParaFor"] = code;
             }
         }
         //if not a regular command, break it down and run
@@ -670,42 +693,40 @@ string commandEvaluation (string input) {//, bool nameAble
     return input;
 }
 
-string checkCommand(string cmd){
-    string input = "";
-    if (cmd == "000"){
+bool checkCommand(string cmd){
+    bool output;
+    if (cmd == "00000000"){
+        output = true;
         move();    
-    }
-    if (cmd == "011"){
+    }if (cmd == "00000011"){
+        output = true;
         giveInfo();
-    }
-    if (cmd == "100"){
+    }if (cmd == "00000100"){
+        output = true;
         getBall();
-    }
-    if (cmd=="101"){
+    }if (cmd=="00000101"){
+        output = true;
         placeBall();    
-    }
-    if (cmd == "110"){
+    }if (cmd == "00000110"){
+        output = true;
         autoGetBall();
-    }
-    if (cmd == "cmd"){
+    }if (cmd == "cmd"){
+        output = true;
         cout << "Current functions:  ";
         for (const auto& pair: functionMap){
             cout << pair.first<<" ; ";    
         }
         cout << '\n';
     }
-    if (cmd == "111" && lastCommand!="111"){
-        checkCommand(lastCommand);
-    }
     lastCommand = cmd;
-    return input;
+    return output;
 }
 //A B C D E F G H I
 //0 1 2 3 4 5 6 7 8
 int main()
 {
-    cout << "Instructions:"<<'\n'<< "000 to move"<< '\n'<<"001 to turn--include 4 digit base-19 input between any 2 characters"<<'\n'<<"010 to set speed--include 4 digit binary input between any 2 characters"<<'\n'<<"011 to display current status"<< '\n'<< "100 to get ball"<<'\n'<<"101 to place ball"<<'\n'<< "110 to auto get ball"<<'\n'<<'\n'<< "Turning is a 4 digit nonadecimal or base-19 code. The first 2 digits are turning in the xz plane,\n the second 2 digits are for turning in the xy plane A(10) B C D E F G H I(18)"<<'\n'<<'\n'<< "Use ..fun.. to create a command then enter the name for the command.\nReminder: don't call the command you created in the command\n";
-    cout << "First 2 digits for turning are for the xz direction, the next two are for xy direction:\n 90 degrees is 4E, 180 is 99, 270 is E4, 360 is II(max 19^2-1)"<<'\n'<<'\n'<< "For conditionals, use 111 to start and con to end the conditional, and use 3 digit binary inputs for the index, comparison operator, and value to compare against\nThe comparison operators are: < is 000, > is 001, == is 010, != is 011"<<'\n'<<"NEVER USE 111 unless for conditionals as you need to have equal numbers of 111 and con"<<'\n';
+    cout << "Instructions:"<<'\n'<< "000 to move"<< '\n'<<"001 to turn--include 4 digit base-19 input between any 2 characters"<<'\n'<<"010 to set speed--include 4 digit binary input between any 2 characters"<<'\n'<<"011 to display current status"<< '\n'<< "100 to get ball"<<'\n'<<"101 to place ball"<<'\n'<< "110 to auto get ball"<< "\n\n"<< "Turning is a 4 digit nonadecimal or base-19 code. The first 2 digits are turning in the xz plane,\n the second 2 digits are for turning in the xy plane A(10) B C D E F G H I(18)"<< "\n\n"<< "Use ..fun.. to create a command then enter the name for the command.\nReminder: don't call the command you created in the command\n";
+    cout << "First 2 digits for turning are for the xz direction, the next two are for xy direction:\n 90 degrees is 4E, 180 is 99, 270 is E4, 360 is II(max 19^2-1)"<< "\n\n"<< "For conditionals, use 111 to start and con to end the conditional, and use 3 digit binary inputs for the index, comparison operator, and value to compare against\nThe comparison operators are: < is 000, > is 001, == is 010, != is 011"<<'\n'<<"NEVER USE 111 unless for conditionals as you need to have equal numbers of 111 and con"<<'\n';
     giveInfo();
     while (true){
         commandEvaluation("1");
