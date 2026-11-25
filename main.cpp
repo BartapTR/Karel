@@ -298,7 +298,6 @@ void move(){
     position[1] = t2;
     position[2] = t3;
 }
-
 int giveNona(string binput){
     //binput here is B9 or JJ type 2 digits
     char rep[9]= {'A','B','C','D','E','F','G','H','I'};
@@ -322,7 +321,6 @@ int giveNona(string binput){
     }
     return convertedDegrees;
 }
-
 void turn(string degres){
     int xzdegre = 0;
     int xydegre = 0;
@@ -340,16 +338,13 @@ void turn(string degres){
     xzdirection +=xzdegre;
     xzdirection %= 360;
 }
-
 void setSpeed(string newSpeed){
     int num = normalMovement;
     num = convFromBinary(newSpeed);
     normalMovement = num;
     cout << "Set speed to " << normalMovement << '\n';
 }
-
 float getDistance();
-
 void giveInfo(){
     cout << '\n' << "You are at: "<<position[0]<<", "<<position[1]<<", "<<position[2]<< '\n'<< "with a x/y-direction: "<< xydirection<< " Degrees"<< '\n'<< "with a x/z-direction: "<< xzdirection<< " Degrees"<< '\n' << "Speed: " << normalMovement<< '\n' << "Distance from origin: " << 0.01*round(100*getDistance());
     // This display only needs the distance, so it reads that field from the
@@ -368,11 +363,13 @@ float getDistance(){
 bool checkCond (string cond){
 	//const int Indexes[] = {normalMovement, xydirection, getDistance(), balls.size(), getClosestBallInfo()[DISTANCE_INDEX], position[0], position[1], position[2]};
 	const int Index = convFromBinary(cond.substr(0, 8));//No need for a list unless checking variable values
-	const int comparison = convFromBinary(cond.substr(8, 8));
+	int comparison = convFromBinary(cond.substr(8, 8));
 	const int value = convFromBinary(cond.substr(16, 8));
 
-    cout <<  Index << "  "<< comparison << "  "<< value << '\n';
+    if (comparison > 3) comparison = 3;
+
     bool comps[] = {Index < value, Index > value, Index == value, Index != value};
+    cout <<  Index << "  "<< comparison << "  "<< value << " is " << comps[comparison] << '\n';
 
 	return comps[comparison];
 }
@@ -384,29 +381,36 @@ string CondEval (string statement){
 	string newCond = "";
 	vector<bool> isTrue;
 	int isNested = 0;
+    int paraCount = 0;
 	vector<string> operations;
 
     cout << "Full conditional statement: " << statement << '\n';
 	for (int i = 0; i < statement.length()/8; i++){
-		string Cmd = statement.substr(8*i, 8);
-
+		const string Cmd = statement.substr(8*i, 8);
         //For nested conditionals
-        if (Cmd == "10001000" && IsCond == false){
+        if (newCond == "b") newCond = "";
+
+        if (Cmd == "10001000" && IsCond == false){///IF only if it's not right after the conditional statement
+            newCond = "";
 			isNested++;
 		}
-		if (Cmd == "00001010"){//because this isn't exclusive to conditionals, it requires an extra check
-            isNested--;//so make isNested to ParaCount
-            if (isNested == 0) {
+        if (Cmd == "00001001" && IsCond == false && isNested > 0){//(
+			paraCount++;
+		}
+		if (Cmd == "00001010"/* ) */&& IsCond == false && isNested > 0){//because this isn't exclusive to conditionals, it requires an extra check
+            if(paraCount>0) paraCount--;//so make isNested to ParaCount
+            if (paraCount == 0) {
                 nonCondStatement += CondEval(newCond);
-                newCond = "";
+                newCond = "b";
+                isNested--;
             }
 		}
 
         //For the main conditional statement
-		if (IsCond && isNested == 0){             //if((i+1)%4==1)//Index	if((i+1)%4==2)//comparison op	if((i+1)%4==3)//Value to compare against
+		if (IsCond){             //if((i+1)%4==1)//Index	if((i+1)%4==2)//comparison op	if((i+1)%4==3)//Value to compare against
 			if((i+1)%4==0){      //Comparison operator between conditions
-				if(Cmd != "100" && Cmd != "101"){//not OR or AND
-                    if(Cmd != "111") {//fixes a problem where the nested conditional is right after the condition of the parent conditional
+				if(Cmd != "00000100" && Cmd != "00000101"){//not OR or AND
+                    if(Cmd != "10001000") {//fixes a problem where the nested conditional is right after the condition of the parent conditional
                         nonCondStatement += Cmd;
                     }else{
                         isNested++;
@@ -424,11 +428,12 @@ string CondEval (string statement){
 				condition +=Cmd;
             }
         //both have safety againgst nested conditionals
-		}else if(isNested != 0){
-			if(Cmd != "111") newCond += Cmd;
+		}else if(isNested > 0){//You need to count nests to keep track of the paranthesis
+			if(Cmd != "10001000" && (Cmd != "00001001" || isNested < paraCount)) newCond += Cmd;
         }else{
-           if(Cmd != "con") nonCondStatement += Cmd;
+           if(newCond == "" && isNested == 0) nonCondStatement += Cmd;
         }
+        cout << "Command: " << Cmd << "  NonCond: " << nonCondStatement  << "  condition: " << condition << "  newCond: " << newCond << "  isNested: " << isNested << "  paraCount: " << paraCount << endl;
     }
     vector<bool> newIsTrue = isTrue;
 	if (operations.size()>0){           //–Repeatedly Check/change cont if isTrue[i] is operations[i] with isTrue[i+1] 
@@ -442,30 +447,14 @@ string CondEval (string statement){
             newOperations[0] = newOperations.back();
             newOperations.pop_back();
             cout << newIsTrue[0] << "  " << oper << "  " << second << '\n';
-			if (oper=="100"){
-				if(newIsTrue[0]==1 || second==1){
-					newIsTrue[0] = true;	
-                }else{
-					newIsTrue[0] = false;		
-                }	
-            }if (oper=="101"){
-				if(newIsTrue[0]==1 && second==1){
-					newIsTrue[0] = true;
-				}else{
-                    cout << "false";
-					newIsTrue[0] = false;
-				}
-			}
+			if (oper=="00000100") newIsTrue[0] = newIsTrue[0]==1 || second==1;	
+            if (oper=="00000101") newIsTrue[0] = newIsTrue[0]==1 && second==1;
         }
-        if (newIsTrue[0] == 0){
-            nonCondStatement = "";
-        }
+        if (newIsTrue[0] == 0) nonCondStatement = "";
         cout << '\n' << "nonCondStatement: " << nonCondStatement << '\n';
         return nonCondStatement;
 	}else{
-        if(isTrue[0] == 0){
-            nonCondStatement = "";
-        }
+        if(isTrue[0] == 0) nonCondStatement = "";
         cout << '\n' << "nonCondStatement: " << nonCondStatement << '\n';
         return nonCondStatement;
     }
@@ -587,7 +576,7 @@ string nextCommand(string gonogo, bool isConditionalen){
     return input;
 }
 
-string commandEvaluation (string input) {//, bool nameAble
+string commandEvaluation (string input, bool nameAble) {//, bool nameAble
 
     string text;
     if(input.length()<2){
@@ -644,16 +633,19 @@ string commandEvaluation (string input) {//, bool nameAble
                 MainParaStatement = "";
             }else if (evalMap["ParaFor"] == 136) {//conditional is the main thing
                 evalMap["ParaFor"] = 0;
-                string nameOfFunc;
                 //can be named as one of the original functions and mess up slightly
-                cout<<"Enter 8-bit conditional code, should be different than the original functions: ";
-                std::getline(std::cin, nameOfFunc);
-                functionMap[nameOfFunc] = "10001000 00001001" + MainParaStatement + "00001010"; // Store the conditional in the map with "conditional, (, and )" so that it gets evaluated as a conditional
-                commandEvaluation(CondEval(MainParaStatement));//condeval returns only the non-conditional part (when we give the conditional + non-cond part) that we evaluate again here
+                if (nameAble){
+                    string nameOfFunc;
+                    cout<<"Enter 8-bit conditional code, should be different than the original functions: ";
+                    std::getline(std::cin, nameOfFunc);
+                    functionMap[nameOfFunc] = "10001000 00001001" + MainParaStatement + "00001010"; // Store the conditional in the map with "conditional, (, and )" so that it gets evaluated as a conditional
+                }
+                commandEvaluation(CondEval(MainParaStatement), false);//condeval returns only the non-conditional part (when we give the conditional + non-cond part) that we evaluate again here
                 MainParaStatement = "";
             }
         }else{
-            if (code != 9 && code != 10) MainParaStatement += cmd;
+            //Fixed problem that didn't allow nested-ifs because of missing paranthesis
+            if ((code != 9 && code != 10) || evalMap["Para"] > 1 || (evalMap["Para"] == 1 && code == 10)) MainParaStatement += cmd;
         }
 
         if (evalMap["ParaFor"] != 0 && evalMap["ParaFor"] != 135  && evalMap["ParaFor"] != 136) {//speed, turn, or other function that requires a parameter
@@ -679,7 +671,7 @@ string commandEvaluation (string input) {//, bool nameAble
                 
                 if(functionMap.contains(cmd)){//what do you use for the parameter if it wants that,?
                     cout << functionMap[cmd];    
-                    commandEvaluation(functionMap[cmd]);
+                    commandEvaluation(functionMap[cmd], false);
                 }
             }
         }
@@ -687,7 +679,10 @@ string commandEvaluation (string input) {//, bool nameAble
 
     return input;
 }
-
+//10001000 00001001 00000001 00000010 00000001 10001000 00001001 00000010 00000000 00000101 00000000 00001010 00001010
+//if(1==1){if(2<5){move}}
+//10000111 00001001 10001000 00001001 00000001 00000010 00000001 10001000 00001001 00000010 00000000 00000101 00000000 00001010 00001010 00000011 00001010
+//function {if(1==1){if(2<5){move}} print}
 bool checkCommand(string cmd){
     bool output = false;
     if (cmd == "00000000"){
@@ -724,7 +719,7 @@ int main()
     cout << "First 2 digits for turning are for the xz direction, the next two are for xy direction:\n 90 degrees is 4E, 180 is 99, 270 is E4, 360 is II(max 19^2-1)"<< "\n\n"<< "For conditionals, use 111 to start and con to end the conditional, and use 3 digit binary inputs for the index, comparison operator, and value to compare against\nThe comparison operators are: < is 000, > is 001, == is 010, != is 011"<<'\n'<<"NEVER USE 111 unless for conditionals as you need to have equal numbers of 111 and con"<<'\n';
     giveInfo();
     while (true){
-        commandEvaluation("1");
+        commandEvaluation("1", true);
     }
     return 0;
 }
