@@ -75,14 +75,18 @@ Now it seems that 8-bit input for 8-bit evauation is better as if you only use b
 
 //If you use paranthesis for functions with parameters, you allow larger inputs, if not you make it much more simpler for basic speed setting and turning
 
+/*Should I explicitly make every command unique, for example for OR and AND, <>==!= etc, should I just have the first ones be 00000000 or would it be better off as 00010010
+//unique commands would make it slightly more readable/understandable, I remember having trouble discerning index and comparison operators with 3 bits, but this could also be due to no whitespaces
+//when it's unrelated, there are more possible commands and the full statement behaves like a diode, only allowing decryption when reading from the start.
+//I am currently debating whether that's a good thing or a bad one. 
+Going with unrelated*/
 
 // A position always has exactly three coordinates. std::array stores its
 // elements directly (unlike vector, it cannot grow or shrink), so it suits
 // fixed-size data such as one XYZ position.
 using Position = array<float, 3>;
 using strVec = vector<string>;
-strVec functions;
-strVec functionen;
+
 std::unordered_map<string, string> functionMap;// merge functionen and functions into a single map for easier lookup, first is the name
 
 // getClosestBallInfo returns one compact snapshot with this fixed layout:
@@ -361,35 +365,11 @@ float getDistance(){
     return RMS(vecco);
 }
 
-/*string conditionalCheck(string conditionStatement){
-    //The conditional statement is a 4 digit input, first 2 digits are the index of the value to check, the next 2 digits are the value to check for
-    //The index is based on the order of the values in the giveInfo function
-    //The value to check for is a 4 digit binary input
-    int index = convFromBinary(conditionStatement.substr(0,2));
-    int valueToCheckFor = convFromBinary(conditionStatement.substr(2,2));
-    int valueToCheck;
-    if (index == Movement_Count_INDEX){
-        valueToCheck = balls.size();
-    }else if(index == Direction_INDEX){
-        valueToCheck = xydirection;
-    }else if(index == Speed_INDEX){
-        valueToCheck = normalMovement;
-    }
-    if (valueToCheck == valueToCheckFor){
-        return "T";
-    }else{
-        return "F";
-    }
-
-}
-*/
-
-
 bool checkCond (string cond){
 	//const int Indexes[] = {normalMovement, xydirection, getDistance(), balls.size(), getClosestBallInfo()[DISTANCE_INDEX], position[0], position[1], position[2]};
-	const int Index = convFromBinary(cond.substr(0, 3));//No need for a list without using runtime values
-	const int comparison = convFromBinary(cond.substr(3, 3));
-	const int value = convFromBinary(cond.substr(6, 3));
+	const int Index = convFromBinary(cond.substr(0, 8));//No need for a list unless checking variable values
+	const int comparison = convFromBinary(cond.substr(8, 8));
+	const int value = convFromBinary(cond.substr(16, 8));
 
     cout <<  Index << "  "<< comparison << "  "<< value << '\n';
     bool comps[] = {Index < value, Index > value, Index == value, Index != value};
@@ -407,15 +387,15 @@ string CondEval (string statement){
 	vector<string> operations;
 
     cout << "Full conditional statement: " << statement << '\n';
-	for (int i = 0; i < statement.length()/3; i++){
-		string Cmd = statement.substr(3*i, 3);
+	for (int i = 0; i < statement.length()/8; i++){
+		string Cmd = statement.substr(8*i, 8);
 
         //For nested conditionals
-        if (Cmd == "111" && IsCond == false){
+        if (Cmd == "10001000" && IsCond == false){
 			isNested++;
 		}
-		if (Cmd == "con"){
-            isNested--;//make it an int
+		if (Cmd == "00001010"){//because this isn't exclusive to conditionals, it requires an extra check
+            isNested--;//so make isNested to ParaCount
             if (isNested == 0) {
                 nonCondStatement += CondEval(newCond);
                 newCond = "";
@@ -639,7 +619,6 @@ string commandEvaluation (string input) {//, bool nameAble
     {"Para", 0}, {"Nests", 0}, {"ParaFor", 0}, {"Formatting", 0}, {"howManyMore", 0}, {"whatIsExpected", 0}
     //mainPara   for condition  func/condition  ignore 1st/2nd      setspeed or turn    format, value paranthesis
     };
-    // evalMap.contains("");
 
     string MainParaStatement = "";
 
@@ -669,7 +648,8 @@ string commandEvaluation (string input) {//, bool nameAble
                 //can be named as one of the original functions and mess up slightly
                 cout<<"Enter 8-bit conditional code, should be different than the original functions: ";
                 std::getline(std::cin, nameOfFunc);
-                functionMap[nameOfFunc] = MainParaStatement; // Store the function in the map
+                functionMap[nameOfFunc] = "10001000 00001001" + MainParaStatement + "00001010"; // Store the conditional in the map with "conditional, (, and )" so that it gets evaluated as a conditional
+                commandEvaluation(CondEval(MainParaStatement));//condeval returns only the non-conditional part (when we give the conditional + non-cond part) that we evaluate again here
                 MainParaStatement = "";
             }
         }else{
@@ -697,7 +677,7 @@ string commandEvaluation (string input) {//, bool nameAble
             if (checkCommand(cmd) == false){//Execute regular command, else check whether it's a user-function (that requires paramaters)
                 if(cmd[0] == '1') evalMap["ParaFor"] = code;// bit checking for parameter requirement
                 
-                if(functionMap.contains(cmd)){
+                if(functionMap.contains(cmd)){//what do you use for the parameter if it wants that,?
                     cout << functionMap[cmd];    
                     commandEvaluation(functionMap[cmd]);
                 }
