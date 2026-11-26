@@ -36,23 +36,17 @@ constexpr size_t DELTA_Y_INDEX = 2;
 constexpr size_t DELTA_Z_INDEX = 3;
 constexpr size_t BALL_INDEX = 4;
 
-/*Use both these two index groups for conditionals, but the top only for getting info
-constexpr size_t Movement_Count_INDEX = 0;
-constexpr size_t Direction_INDEX = 1;
-constexpr size_t Speed_INDEX = 2;
-*/
-
 string lastCommand;
 
 Position position = {0, 0, 0};
 vector<Position> balls = {};
 //the shape of area is a sphere
 
-//After that you can add numbers and command codes
+//Don't implement yet :
 //Maybe gravity, time and saving
 //Turn it into an actual game?
 
-const float radius = 30.0;
+const float radius = 256.0;
 
 int xydirection = 0;
 int xzdirection = 0;
