@@ -14,6 +14,22 @@
 #include <unordered_map>
 #include <vector>
 
+/*
+First, just else, so that implementation is easier
+
+This also makes me question the current formatting: 
+function (move) nameOfFunc
+if(condition move) nameOfCond
+
+First, the naming happens at the end, which isn't actually too bad, considering there isn't an easy way of just going to the name section after adding a previously unthought feature
+to the function.
+but I feel like it should be in-line similar to the pre-built-parafunctions turn(90) instead of turn() or simply turn then 90 
+Also, there needs to be a way to edit the functions' and conditionals' contents and their names.
+
+*/
+
+
+
 // An unnamed namespace keeps these helpers local to this source file.
 namespace {
 
@@ -270,6 +286,7 @@ struct ParserState {
     int parentheses = 0; // Number of opening parentheses still awaiting a close.
     int parameterFor = 0; // Opcode whose argument or body is being collected; zero means none.
     int expected = 0; // Parameter progress: opening token, value, then closing token.
+    int nameOf = 0;// For in-line naming
 };
 
 // RAII guard: entering a scope raises depth, and every exit automatically lowers it.
@@ -358,38 +375,44 @@ private:
         ParserState state;
         std::string statement;
 
+//10001000 01110110 00001001 00000000 00000000 00000001 00000000 00000000 00000011 00001010
+//condition  Name      (         0        <         1      mov       mov     print      )
+//10000111 01110111 00001001 00000000 00000011 00001010
+//function   Name     (      mov      print      )
+
         for (const Token& token : tokens) {
             const int code = token.code;
             // 9 is '(' and 10 is ')'; update nesting before deciding if a body is finished.
             if (code == 10) --state.parentheses;
             if (code == 9) ++state.parentheses;
-
-            // Keep the existing trace layout; its unused state fields are zero.
-            output_ << "Main: " << statement << ".  " << code << "  " << state.parentheses
-                    << "  0  " << state.parameterFor << "  0  0  " << state.expected << '\n';
+            
+            output_ << code << " :CP: " << state.parentheses << '\n';
+            
+            if ((state.expected == 0 && (state.parameterFor == 135 || state.parameterFor == 136)) && nameable){
+                    state.nameOf = code; 
+                    state.expected = 1; //closes itself
+                    continue;
+            }
 
             if (state.parentheses == 0) {
                 if (state.parameterFor == 135) { // 135 defines a reusable function body.
                     state.parameterFor = 0;
-                    std::string name;
-                    output_ << "Enter 8-bit function code, should be different than the original functions: " << std::flush;
-                    if (!std::getline(input_, name)) return false;
-                    functions_[name] = statement; // Save its text; execute it only when called.
-                    output_ << "Main" << statement << '\n';
+                    functions_[state.nameOf] = statement; // Save its text; execute it only when called.
+                    output_ << "Main " << statement << '\n';
                     statement.clear();
+                    state.expected = 0;//reset expected so speed-setting after function works
                 } else if (state.parameterFor == 136) { // 136 defines/evaluates a conditional.
                     state.parameterFor = 0;
-                    if (nameable) {
-                        std::string name;
-                        output_ << "Enter 8-bit conditional code, should be different than the original functions: " << std::flush;
-                        if (!std::getline(input_, name)) return false;
+                    if (nameable) {//This might be a problem
                         // Reattach IF and parentheses so later calls recheck the condition.
-                        functions_[name] = "10001000 00001001" + statement + "00001010";
+                        functions_[state.nameOf] = "10001000 00001001" + statement + "00001010";
                     }
+                    output_ << state.expected << " " << code << std::flush;
                     const auto body = evaluateCondition(statement);
                     // An empty optional means failure; otherwise execute its returned body.
                     if (!body || !evaluate(*body, false)) return false;
                     statement.clear();
+                    state.expected = 0;//reset expected so speed-setting after function works
                 }
             // Drop the outer parentheses, but retain pairs belonging to nested commands.
             } else if ((code != 9 && code != 10) || state.parentheses > 1 ||
@@ -423,12 +446,15 @@ private:
                 // A leading 1 marks the original protocol's parameter-taking command group.
                 if (token.text.front() == '1') state.parameterFor = code;
                 // One hash lookup replaces contains() followed by another lookup with [].
-                const auto function = functions_.find(std::string(token.text));
+                const auto function = functions_.find(code);
                 if (function != functions_.end()) {
                     output_ << function->second;
                     if (!evaluate(function->second, false)) return false; // Reuse the same parser.
                 }
             }
+            // Keep the existing trace layout; its unused state fields are zero.
+            output_ << " Main: " << statement << " C: " << code << " P:  " << state.parentheses
+                    << "  PF:  " << state.parameterFor << "  E:  " << state.expected << '\n';
         }
         return true;
     }
@@ -566,7 +592,7 @@ private:
     std::istream& input_;
     std::ostream& output_;
     World world_;
-    std::unordered_map<std::string, std::string> functions_; // Names map to saved command text.
+    std::unordered_map<int, std::string> functions_; // Names map to saved command text.
     std::size_t depth_ = 0;
 };
 

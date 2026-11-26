@@ -2,7 +2,7 @@
 I started this project to recreate the basic  Karel  IDE in C++, although it already exists, I still learned a lot from programming this.
 
 # Update
-Changed input type to 8-bits, most commands just have 5 zeroes before their previous.
+Added in-line function and conditional naming;
 
 # Instructions:  
  - 00000000 to move   
@@ -28,16 +28,17 @@ Turning is a 4 digit nonadecimal or base-19 code in between 4 zeroes:
 
 # Functions
 
- 1. Use _10000111_ to create a new command, with content in between _00001001_ and _00001010_ 
+ 1. Use _10000111_ to create a new command
  2. Enter the name for the command.
- 3. _Reminder: don t call the command you created in the command_
+ 3. Enter content in between _00001001_ and _00001010_ 
+ 4. _Reminder: don t call the command you created in the command_
 
 # Conditionals 
  1. For conditionals, use _10001000_
- 2. In between _00001001_ and _00001010_, write the condition first followed by the commands to execute if true
- 3. then finally enter the name for the command 
-  For the condition use 8 digit binary inputs for the index, comparison operator, and value to compare against
-  
-  The comparison operators are as the following:
+ 2. Enter the name for the command 
+ 3. In between _00001001_ and _00001010_, write the condition first followed by the commands to execute if true
+
+For the condition use 8 digit binary inputs for the index, comparison operator, and value to compare against
+The comparison operators are as the following:
 -  "<" is 00000000, ">" is 00000001, "==" is 00000010, "!=" is 00000011
 -  or 0 for '<', 1 for '>', 2 for '==', 3 for '!='
