@@ -15,11 +15,8 @@
 #include <vector>
 
 /*
-First, just else, so that implementation is easier
+Now, else-if
 Also, there needs to be a way to edit the functions' and conditionals' contents and their names.
-
-so for else to work, you need to check whether there is an else statement before OR you just check the statement again when else is called
-A better way would be to store the value of the last conditional, what I mean by value is the value of the condition only, that would be the best probably
 */
 
 // An unnamed namespace keeps these helpers local to this source file.
@@ -370,11 +367,13 @@ private:
         std::string statement;
 
 //10001000 01110101 00001001 00000000 00000000 00000001 00000000 00000000 00000011 00001010
-//condition  Name      (         0        <         1      mov       mov     print      )
+//condition  Name      (         0        <         1      mov**   **mov   *print*      )
+//10001000 01110110 00001001 00000001 00000000 10000001 00000000 00000000 00000011 00001010 10001001 00001001 00000000 00000011 00001010
+//condition  Name      (         1        <       129      mov**   **mov   *print*      )     else    (          move     pri       )
 //10001000 01110110 00001001 00000001 00000000 00000001 00000000 00000000 00000011 00001010 10001001 00001001 00000000 00000011 00001010
-//condition  Name      (         1        <         1      mov       mov     print      )     else    (          move     pri       )
+//condition  Name      (         1        <         1      mov       mov     print      )     else    (        **move    *pri*      )
 //10000111 01110111 00001001 00000000 00000011 00001010
-//function   Name     (      mov      print      )
+//function   Name     (      mov**    print **   )
 
         for (const Token& token : tokens) {
             const int code = token.code;
@@ -399,21 +398,19 @@ private:
                     state.expected = 0;//reset expected so speed-setting after function works
                 } else if (state.parameterFor == 136) { // 136 defines/evaluates a conditional.
                     state.parameterFor = 0;
-                    if (nameable) {//This might be a problem
+                    if (nameable) {
                         // Reattach IF and parentheses so later calls recheck the condition.
                         functions_[state.nameOf] = "10001000 00001001" + statement + "00001010";
                     }
                     const auto body = evaluateCondition(statement);
                     std::cout << " before: " << state.valOfLastCond;
                     
-                    //Bug: because it sends and empty string, the other instance of evaluate() gets user input, evaluates that, THEN it continues from here
-                    if (body == ""){// !body isn't enough, you could also check the size as well probably, that's better than checking ==""
+                    if (body == ""){
                         state.valOfLastCond = false;
-                    }else{//so only send if it's full right here
+                    }else{//Only send nonCond to be executed if it's not "", fixed the input part but it wouldn't set val to false
                         if (evaluate(*body, false)) statement += "";//just wait for the execution
                         state.valOfLastCond = true;
                     }
-                    //if (!body || !evaluate(*body, false)) return false;
                     std::cout << " \n AAfter: " << state.valOfLastCond << '\n';
                     statement.clear();
                     state.expected = 0;//reset expected so speed-setting after function works

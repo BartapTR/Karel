@@ -14,12 +14,12 @@ Added in-line function and conditional naming;
  - 00000110 to auto get ball
  - 00001001 to open paranthesis
  - 00001010 to close paranthesis
- - 10001000 to start conditional
  - 10000111 to start function
+ - 10001000 to start conditional
+ - 10001001 to start else               --after a conditional, no name required
 
 
 Turning is a 4 digit nonadecimal or base-19 code in between 4 zeroes:
-
  - Example: 004e4e00
  - First and last 2 digits are ignored for evaluation as follows: 4e4e 
  - The first 2 digits are turning in the xz plane
@@ -37,8 +37,9 @@ Turning is a 4 digit nonadecimal or base-19 code in between 4 zeroes:
  1. For conditionals, use _10001000_
  2. Enter the name for the command 
  3. In between _00001001_ and _00001010_, write the condition first followed by the commands to execute if true
+ 4. Add _10001001_ with commands to execute if the initial condition is false in between _00001001_ and _00001010_.
 
-For the condition use 8 digit binary inputs for the index, comparison operator, and the value to compare against.
+For a condition use 8 digit binary inputs for the index, comparison operator, and the value to compare against.
 The comparison operators are as the following:
 -  "<" is 00000000, ">" is 00000001, "==" is 00000010, "!=" is 00000011
 -  or 0 for '<', 1 for '>', 2 for '==', 3 for '!='
