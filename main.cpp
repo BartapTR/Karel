@@ -16,19 +16,11 @@
 
 /*
 First, just else, so that implementation is easier
-
-This also makes me question the current formatting: 
-function (move) nameOfFunc
-if(condition move) nameOfCond
-
-First, the naming happens at the end, which isn't actually too bad, considering there isn't an easy way of just going to the name section after adding a previously unthought feature
-to the function.
-but I feel like it should be in-line similar to the pre-built-parafunctions turn(90) instead of turn() or simply turn then 90 
 Also, there needs to be a way to edit the functions' and conditionals' contents and their names.
 
+so for else to work, you need to check whether there is an else statement before OR you just check the statement again when else is called
+A better way would be to store the value of the last conditional, what I mean by value is the value of the condition only, that would be the best probably
 */
-
-
 
 // An unnamed namespace keeps these helpers local to this source file.
 namespace {
@@ -287,6 +279,7 @@ struct ParserState {
     int parameterFor = 0; // Opcode whose argument or body is being collected; zero means none.
     int expected = 0; // Parameter progress: opening token, value, then closing token.
     int nameOf = 0;// For in-line naming
+    bool valOfLastCond = true;//int valOfLastCond = 0;//keep it at 0 then 1 for false and 2 for true, unless you can't have "else" without if and if "if" is true, yeah just use bool
 };
 
 // RAII guard: entering a scope raises depth, and every exit automatically lowers it.
@@ -367,7 +360,8 @@ private:
         // Own the storage behind token views, including during recursive calls
         // and redefinitions of a function currently being evaluated.
         std::string text(input);
-        if (text.size() < 2) {
+        if (text.size() < 8) {
+            if (nameable == false) return false;
             output_ << "Enter next command: " << std::flush;
             if (!std::getline(input_, text)) return false; // Prevent the old endless EOF loop.
         }
@@ -375,8 +369,10 @@ private:
         ParserState state;
         std::string statement;
 
-//10001000 01110110 00001001 00000000 00000000 00000001 00000000 00000000 00000011 00001010
+//10001000 01110101 00001001 00000000 00000000 00000001 00000000 00000000 00000011 00001010
 //condition  Name      (         0        <         1      mov       mov     print      )
+//10001000 01110110 00001001 00000001 00000000 00000001 00000000 00000000 00000011 00001010 10001001 00001001 00000000 00000011 00001010
+//condition  Name      (         1        <         1      mov       mov     print      )     else    (          move     pri       )
 //10000111 01110111 00001001 00000000 00000011 00001010
 //function   Name     (      mov      print      )
 
@@ -407,12 +403,29 @@ private:
                         // Reattach IF and parentheses so later calls recheck the condition.
                         functions_[state.nameOf] = "10001000 00001001" + statement + "00001010";
                     }
-                    output_ << state.expected << " " << code << std::flush;
                     const auto body = evaluateCondition(statement);
-                    // An empty optional means failure; otherwise execute its returned body.
-                    if (!body || !evaluate(*body, false)) return false;
+                    std::cout << " before: " << state.valOfLastCond;
+                    
+                    //Bug: because it sends and empty string, the other instance of evaluate() gets user input, evaluates that, THEN it continues from here
+                    if (body == ""){// !body isn't enough, you could also check the size as well probably, that's better than checking ==""
+                        state.valOfLastCond = false;
+                    }else{//so only send if it's full right here
+                        if (evaluate(*body, false)) statement += "";//just wait for the execution
+                        state.valOfLastCond = true;
+                    }
+                    //if (!body || !evaluate(*body, false)) return false;
+                    std::cout << " \n AAfter: " << state.valOfLastCond << '\n';
                     statement.clear();
                     state.expected = 0;//reset expected so speed-setting after function works
+                } else if (state.parameterFor == 137) { // 137 "else"
+                    state.parameterFor = 0;
+                    functions_[state.nameOf] += "10001001 00001001" + statement + "00001010";//adds the else statement no matter
+                    std::cout << " ADDED ELSE: " << (state.valOfLastCond == false) << '\n';
+                    if (state.valOfLastCond == false) {//Evaluated only if the previous conditional is false.
+                        if (evaluate(statement, false)) statement += "";//wait for the execution
+                        std::cout << " EXECUTED ELSE \n";
+                    }
+                    statement.clear();
                 }
             // Drop the outer parentheses, but retain pairs belonging to nested commands.
             } else if ((code != 9 && code != 10) || state.parentheses > 1 ||
@@ -421,7 +434,7 @@ private:
             }
 
             // Functions and IFs collect bodies; other high-bit commands collect one argument.
-            if (state.parameterFor != 0 && state.parameterFor != 135 && state.parameterFor != 136) {
+            if (state.parameterFor != 0 && state.parameterFor != 135 && state.parameterFor != 136 && state.parameterFor != 137) {
                 if (state.expected == 2) { // The value was read; this token finishes the argument.
                     state.expected = 0;
                     output_ << "Main statement: " << statement << '\n';

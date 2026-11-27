@@ -31,14 +31,14 @@ Turning is a 4 digit nonadecimal or base-19 code in between 4 zeroes:
  1. Use _10000111_ to create a new command
  2. Enter the name for the command.
  3. Enter content in between _00001001_ and _00001010_ 
- 4. _Reminder: don t call the command you created in the command_
+ 4. _Reminder: don't call the command you created in the command_
 
 # Conditionals 
  1. For conditionals, use _10001000_
  2. Enter the name for the command 
  3. In between _00001001_ and _00001010_, write the condition first followed by the commands to execute if true
 
-For the condition use 8 digit binary inputs for the index, comparison operator, and value to compare against
+For the condition use 8 digit binary inputs for the index, comparison operator, and the value to compare against.
 The comparison operators are as the following:
 -  "<" is 00000000, ">" is 00000001, "==" is 00000010, "!=" is 00000011
 -  or 0 for '<', 1 for '>', 2 for '==', 3 for '!='
